@@ -1,0 +1,1 @@
+ALTER TABLE "date_ideas" DROP COLUMN "emoji";

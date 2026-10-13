@@ -1,0 +1,3 @@
+import { Heart, Sparkles } from 'lucide-react';
+import { MobileLink } from '@/components/mobile-shell';
+export default function Celebration() { return <main className="page celebration"><span className="eyebrow">Y ESTO SOLO ES EL PRINCIPIO</span><Sparkles className="celebration-sparkles" size={38} strokeWidth={1} /><div className="celebration-number">100<Heart size={38} /></div><h1>Cien citas.<br /><em>Una historia para siempre.</em></h1><p>Cada momento vivido juntos es una página más de vuestra historia. Que lo mejor siempre esté por venir.</p><MobileLink className="button" href="/dates">Volver a nuestro diario</MobileLink></main>; }

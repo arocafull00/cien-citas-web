@@ -1,0 +1,11 @@
+'use client';
+import { Heart, Trophy, CalendarDays } from 'lucide-react';
+import type { Profile, Achievement } from '@/lib/types';
+import { CachedImage } from './cached-image';
+export function ProfileView({ profile, achievements, scope, completed, total }: { profile: Profile; achievements: Achievement[]; scope: string; completed: number; total: number }) {
+  return <><div className="profile-hero"><div className="couple-avatars"><Avatar name={profile.user.name} src={profile.user.avatarUrl} scope={scope} /><span className="avatar-heart"><Heart size={18} /></span><Avatar name={profile.couple.partnerName || 'Tu pareja'} /></div><h1>{profile.user.name} <span>&</span> {profile.couple.partnerName}</h1><p>Una historia que construimos juntos</p><small>Desde {new Date(profile.couple.joinedAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</small></div><div className="profile-stats"><div><Heart size={20} /><strong>{completed}</strong><span>Citas vividas</span></div><div><CalendarDays size={20} /><strong>{profile.stats.daysActive}</strong><span>Días de recuerdos</span></div><div><Trophy size={20} /><strong>{achievements.filter(a => a.unlocked).length}</strong><span>Logros juntos</span></div></div><div className="profile-progress"><span>Nuestra historia</span><strong>{completed} / {total}</strong><div className="progress-track"><span style={{ width: `${Math.min(100, completed / total * 100)}%` }} /></div></div><section className="achievements"><h2>Pequeñas grandes conquistas</h2><p>Cada paso cuenta en nuestra historia.</p><div className="achievement-grid">{achievements.map(achievement => <article key={achievement.id} className={achievement.unlocked ? 'achievement unlocked' : 'achievement locked'}><span className="achievement-icon"><Trophy size={27} strokeWidth={1.3} /></span><h3>{achievement.title}</h3><p>{achievement.description}</p><span>{achievement.unlocked ? 'Conseguido' : 'Por descubrir'}</span>{achievement.unlockedAt ? <small>{new Date(achievement.unlockedAt).toLocaleDateString('es-ES')}</small> : null}</article>)}</div></section></>;
+}
+export function Avatar({ name, src, scope }: { name: string; src?: string | null; scope?: string }) {
+  return <div className="avatar">{src ? <CachedImage src={src} alt={name} scope={scope} /> : <span>{name.slice(0, 1).toLocaleUpperCase('es')}</span>}</div>;
+}
+

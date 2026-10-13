@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.env*
+!.env.example
+*.tsbuildinfo
+public/sw.js*
+public/swe-worker*
+playwright-report/
+test-results/
+
+public/offline.html
+public/offline-ui.*
