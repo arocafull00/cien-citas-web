@@ -27,7 +27,7 @@ export async function readSnapshot(userId?: string, coupleId?: string): Promise<
   if (!value || (userId && value.account.clerkUserId !== userId) || (coupleId && value.couple.id !== coupleId)) return null;
   return value;
 }
-export async function clearPrivateData() {
+export async function clearPrivateData(options: { preserveProfileSetup?: boolean } = {}) {
   ++generation;
   const db = await database();
   const tx = db.transaction(['snapshots', 'meta'], 'readwrite');
@@ -35,12 +35,15 @@ export async function clearPrivateData() {
   await tx.done;
   if ('caches' in globalThis) await Promise.all((await caches.keys()).filter(k => k.startsWith(PHOTO_PREFIX)).map(k => caches.delete(k)));
   if (typeof window !== 'undefined') {
-    Object.keys(localStorage).filter(k => k.startsWith('100citas:profile:')).forEach(k => localStorage.removeItem(k));
+    if (!options.preserveProfileSetup) Object.keys(localStorage).filter(k => k.startsWith('100citas:profile:')).forEach(k => localStorage.removeItem(k));
+    Object.keys(sessionStorage).filter(k => k.startsWith('100citas:feed:')).forEach(k => sessionStorage.removeItem(k));
   }
 }
 
-export async function loadPhoto(url: string, scope: string, expectedGeneration: number): Promise<Blob> {
-  const requestUrl = `/api/media?url=${encodeURIComponent(url)}`;
+export async function loadPhoto(url: string, scope: string, expectedGeneration: number, variant: 'original' | 'thumbnail' = 'original'): Promise<Blob> {
+  const originalUrl = `/api/media?url=${encodeURIComponent(url)}`;
+  const thumbnailUrl = `${originalUrl}&variant=thumbnail`;
+  const requestUrl = variant === 'thumbnail' ? thumbnailUrl : originalUrl;
   const cache = 'caches' in globalThis ? await caches.open(PHOTO_PREFIX + scope) : null;
   const cached = await cache?.match(requestUrl);
   if (cached) {
@@ -48,7 +51,13 @@ export async function loadPhoto(url: string, scope: string, expectedGeneration: 
     if (savedAt && Date.now() - savedAt < PHOTO_AGE) return cached.blob();
     await cache?.delete(requestUrl);
   }
-  const response = await fetch(requestUrl, { credentials: 'same-origin', cache: 'no-store' });
+  let response: Response;
+  try { response = await fetch(requestUrl, { credentials: 'same-origin', cache: 'no-store' }); }
+  catch (error) {
+    const alternate = await cache?.match(variant === 'original' ? thumbnailUrl : originalUrl);
+    if (alternate) { const savedAt = Number(alternate.headers.get('x-citas-cached-at')); if (savedAt && Date.now() - savedAt < PHOTO_AGE) return alternate.blob(); }
+    throw error;
+  }
   if (!response.ok) throw new Error('Foto no disponible');
   const blob = await response.blob();
   if (!blob.type.startsWith('image/')) throw new Error('Foto no válida');

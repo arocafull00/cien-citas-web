@@ -2,7 +2,7 @@ import withSerwistInit from '@serwist/next';
 import { readFileSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
-const offlineAssets = ['offline-ui.js', 'offline-ui.css', ...readdirSync('public/images/cards').map(name => `images/cards/${name}`), 'fonts/Lora/static/Lora-Regular.ttf', 'fonts/Lora/static/Lora-Bold.ttf', 'fonts/Lora/static/Lora-Italic.ttf', 'fonts/SourceSans3-Regular.ttf', 'fonts/SourceSans3-SemiBold.ttf'];
+const offlineAssets = ['offline-ui.js', 'offline-ui.css', ...readdirSync('public/images/cards').filter(name => name.endsWith('.webp')).map(name => `images/cards/${name}`), 'fonts/Lora/static/Lora-Regular.ttf', 'fonts/Lora/static/Lora-Bold.ttf', 'fonts/Lora/static/Lora-Italic.ttf', 'fonts/SourceSans3-Regular.ttf', 'fonts/SourceSans3-SemiBold.ttf'];
 const assetEntries = offlineAssets.map(path => ({ url: `/${path}`, revision: createHash('sha256').update(readFileSync(`public/${path}`)).digest('hex') }));
 
 const withSerwist = withSerwistInit({

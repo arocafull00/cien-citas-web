@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -23,13 +24,13 @@ export function BottomNav() {
 export function ConnectionNotice() {
   const { online, error, updatedAt, refresh } = useApp();
   if (online && !error) return null;
-  return <div className="connection-notice" role="status"><span>{!online ? 'Sin conexión · Solo lectura' : error}{updatedAt ? <small>Guardado el {new Date(updatedAt).toLocaleString('es-ES')}</small> : null}</span>{online ? <button onClick={() => void refresh()}>Reintentar</button> : <a href="/offline">Abrir recuerdos</a>}</div>;
+  return <div className="connection-notice" role="status"><span>{!online ? 'Sin conexión · Solo lectura' : error}{updatedAt ? <small>Guardado el {new Date(updatedAt).toLocaleString('es-ES')}</small> : null}</span>{online ? <Button variant="ghost" size="unstyled" onClick={() => void refresh()}>Reintentar</Button> : <a href="/offline">Abrir recuerdos</a>}</div>;
 }
 export function CoupleGate({ children }: { children: React.ReactNode }) {
   const { loading, couple, account, error, online, refresh } = useApp();
   const router = useRouter();
-  useEffect(() => { if (!loading && account && !couple && !error && online) router.replace('/onboarding'); }, [loading, account, couple, error, online, router]);
+  useEffect(() => { if (!loading && account && !couple?.partner && !error && online) router.replace('/onboarding'); }, [loading, account, couple, error, online, router]);
   if (loading) return <main className="page status-screen"><span className="spinner" /><p>Abriendo vuestro diario…</p></main>;
-  if (!couple) return <main className="page status-screen"><h1>{error ? 'No pudimos conectar' : 'Preparando vuestra historia'}</h1>{error ? <><p>{error}</p><button className="button" onClick={() => void refresh()}>Reintentar</button><a href="/offline">Consultar recuerdos guardados</a></> : <p>Un momento…</p>}</main>;
+  if (!couple?.partner) return <main className="page status-screen"><h1>{error ? 'No pudimos conectar' : 'Preparando vuestra historia'}</h1>{error ? <><p>{error}</p><Button variant="ghost" size="unstyled" className="button" onClick={() => void refresh()}>Reintentar</Button><a href="/offline">Consultar recuerdos guardados</a></> : <p>Un momento…</p>}</main>;
   return <><ConnectionNotice />{children}</>;
 }

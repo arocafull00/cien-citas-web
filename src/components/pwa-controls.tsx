@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Download, RefreshCw } from 'lucide-react';
 type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
@@ -28,9 +29,9 @@ export function PwaControls() {
     return () => { window.removeEventListener('beforeinstallprompt', handle); window.removeEventListener('appinstalled', installed); };
   }, []);
   return <aside className="pwa-controls">
-    {update ? <button className="text-button" onClick={() => { navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true }); update.postMessage({ type: 'SKIP_WAITING' }); }}><RefreshCw size={15} /> Nueva versión · Actualizar</button> : null}
-    {install ? <button className="text-button" onClick={async () => { await install.prompt(); await install.userChoice; setInstall(null); }}><Download size={15} /> Instalar 100 Citas</button> : null}
-    {ios ? <button className="text-button" onClick={() => setHelp(!help)}><Download size={15} /> Añadir a la pantalla de inicio</button> : null}
+    {update ? <Button variant="ghost" size="unstyled" className="text-button" onClick={() => { navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true }); update.postMessage({ type: 'SKIP_WAITING' }); }}><RefreshCw size={15} /> Nueva versión · Actualizar</Button> : null}
+    {install ? <Button variant="ghost" size="unstyled" className="text-button" onClick={async () => { await install.prompt(); await install.userChoice; setInstall(null); }}><Download size={15} /> Instalar 100 Citas</Button> : null}
+    {ios ? <Button variant="ghost" size="unstyled" className="text-button" onClick={() => setHelp(!help)}><Download size={15} /> Añadir a la pantalla de inicio</Button> : null}
     {help ? <p>En Safari, pulsa Compartir y después «Añadir a la pantalla de inicio».</p> : null}
   </aside>;
 }

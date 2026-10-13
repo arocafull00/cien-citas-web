@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { apiClient, ApiError } from '@/lib/api-client';
@@ -55,8 +55,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         apiClient.get<{ account: Account }>('/api/account'), apiClient.get<{ couple: Couple | null }>('/api/couples/me'),
       ]);
       if (epoch !== requestEpoch.current) return;
-      if (!coupleResult.couple) {
-        await clearPrivateData();
+      if (!coupleResult.couple?.partner) {
+        await clearPrivateData({ preserveProfileSetup: true });
         snapshot.current = null; setAccount(accountResult.account); setCouple(null); setDates([]);
         return;
       }
@@ -75,7 +75,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         details: previous?.couple.id === coupleResult.couple.id ? previous.details : {},
         profile: previous?.profile || null, achievements: previous?.achievements || [], updatedAt: new Date().toISOString(),
       };
-      snapshot.current = next; setDates(next.dates); setUpdatedAt(next.updatedAt);
+      snapshot.current = next; setDates(previous => {
+        const byId = new Map(previous.map(date => [date.id, date]));
+        const stable = next.dates.map(date => {
+          const old = byId.get(date.id);
+          return old && (Object.keys(date) as (keyof DateEntry)[]).every(key => old[key] === date[key]) ? old : date;
+        });
+        return previous.length === stable.length && previous.every((date, index) => date === stable[index]) ? previous : stable;
+      }); setUpdatedAt(next.updatedAt);
       void saveSnapshot(next, gen).catch(() => setError('No hay espacio para guardar los recuerdos sin conexión.'));
     } catch (failure) {
       if (epoch !== requestEpoch.current) return;
@@ -142,16 +149,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [rememberDetail]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await reset();
     const channel = new BroadcastChannel('100citas-session'); channel.postMessage('logout'); channel.close();
     await clerk.signOut({ redirectUrl: '/login' });
-  };
+  }, [clerk, reset]);
   const rememberProfile = useCallback((profile: Profile, achievements: Achievement[], expectedScope: string) => {
     const current = snapshot.current;
     if (!current || `${current.account.clerkUserId}:${current.couple.id}` !== expectedScope) return;
     const next = { ...current, profile, achievements }; snapshot.current = next;
     void saveSnapshot(next, currentGeneration()).catch(() => {});
   }, []);
-  return <Context.Provider value={{ account, couple, dates, loading, error, online, updatedAt, scope: couple && userId ? `${userId}:${couple.id}` : '', refresh, getDetail, rememberDetail, rememberProfile, signOut, reset, clearSavedMemories }}>{children}</Context.Provider>;
+  const scope = couple && userId ? `${userId}:${couple.id}` : '';
+  const value = useMemo(() => ({ account, couple, dates, loading, error, online, updatedAt, scope, refresh, getDetail, rememberDetail, rememberProfile, signOut, reset, clearSavedMemories }), [account, couple, dates, loading, error, online, updatedAt, scope, refresh, getDetail, rememberDetail, rememberProfile, signOut, reset, clearSavedMemories]);
+  return <Context.Provider value={value}>{children}</Context.Provider>;
 }

@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 import { useClerk, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useSyncExternalStore } from 'react';
@@ -30,7 +31,7 @@ export function LoginScreen() {
   const slide = ONBOARDING_SLIDES[index];
   const last = seen || index === ONBOARDING_SLIDES.length - 1;
   return <main className="login-page">
-    {!seen ? <div className="login-top"><span className="eyebrow">NUESTRA HISTORIA</span>{!last ? <button className="text-button" onClick={() => setIndex(ONBOARDING_SLIDES.length - 1)}>Saltar</button> : null}</div> : null}
+    {!seen ? <div className="login-top"><span className="eyebrow">NUESTRA HISTORIA</span>{!last ? <Button variant="ghost" size="unstyled" className="text-button" onClick={() => setIndex(ONBOARDING_SLIDES.length - 1)}>Saltar</Button> : null}</div> : null}
     <div className={`onboarding-visual ${!seen ? slide.kind : 'welcome'}`} key={seen ? 'welcome' : index}>
       {seen || slide.kind === 'partners' ? <img className="login-hero" src="/images/login-header.png" alt="Recuerdos de nuestra historia" /> : null}
       {!seen && slide.kind === 'polaroid' ? <div className="polaroid"><img src={slide.heroImage} alt="Una historia que empieza juntos" /><span>El principio de algo bonito ♡</span></div> : null}
@@ -40,9 +41,9 @@ export function LoginScreen() {
     </div>
     <div className="login-copy"><h1>{seen ? 'Bienvenidos de vuelta' : <>{slide.title}{slide.kind === 'polaroid' ? <em>{slide.titleHighlight}</em> : null}</>}</h1><p>{seen ? 'Inicia sesión y vive aventuras junto a tu pareja' : slide.description}</p></div>
     <div className="login-actions">
-      {!seen ? <div className="dots" aria-label={`Pantalla ${index + 1} de ${ONBOARDING_SLIDES.length}`}>{ONBOARDING_SLIDES.map((_, i) => <button key={i} aria-label={`Ir a pantalla ${i + 1}`} aria-current={i === index ? 'step' : undefined} onClick={() => setIndex(i)} />)}</div> : null}
+      {!seen ? <div className="dots" aria-label={`Pantalla ${index + 1} de ${ONBOARDING_SLIDES.length}`}>{ONBOARDING_SLIDES.map((_, i) => <Button variant="ghost" size="unstyled" key={i} aria-label={`Ir a pantalla ${i + 1}`} aria-current={i === index ? 'step' : undefined} onClick={() => setIndex(i)} />)}</div> : null}
       {error || appError ? <p role="alert" className="error-message">{error || appError}</p> : null}
-      {last ? <button className="button google-button" disabled={busy || !clerk.loaded} onClick={() => void signIn()}><span className="google-g" aria-hidden="true">G</span>{busy ? 'Conectando…' : 'Continuar con Google'}</button> : <button className="button" onClick={() => setIndex(i => i + 1)}>Continuar <ArrowRight size={18} /></button>}
+      {last ? <Button variant="ghost" size="unstyled" className="button google-button" disabled={busy || !clerk.loaded} onClick={() => void signIn()}><span className="google-g" aria-hidden="true">G</span>{busy ? 'Conectando…' : 'Continuar con Google'}</Button> : <Button variant="ghost" size="unstyled" className="button" onClick={() => setIndex(i => i + 1)}>Continuar <ArrowRight size={18} /></Button>}
       <p className="love-quote">«Un amor que se cuida, crece.»</p>
       <div id="clerk-captcha" />
     </div>

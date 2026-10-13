@@ -2,8 +2,8 @@ export const runtime = "nodejs";
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { handleApiError } from '@/lib/db-errors';
 import { db } from '@/db';
-import { users, couples, coupleDates } from '@/db/schema';
-import { eq, and, count, min } from 'drizzle-orm';
+import { users, couples, coupleDates, customDates, dateIdeas } from '@/db/schema';
+import { eq, and, sql } from 'drizzle-orm';
 import { storageKey } from '@/lib/storage-key';
 
 export async function GET(request: Request) {
@@ -24,35 +24,29 @@ export async function GET(request: Request) {
       .limit(1);
 
     let partnerName: string | null = null;
+    let partnerAvatarUrl: string | null = null;
     if (partnerId) {
       const [partner] = await db
-        .select({ name: users.name })
+        .select({ name: users.name, avatarUrl: users.avatarUrl })
         .from(users)
         .where(eq(users.id, partnerId))
         .limit(1);
       partnerName = partner?.name ?? null;
+      partnerAvatarUrl = partner?.avatarUrl ?? null;
     }
 
-    const [stats] = await db
-      .select({
-        totalCompleted: count(coupleDates.id),
-        firstCompletedAt: min(coupleDates.completedAt),
-      })
-      .from(coupleDates)
-      .where(and(eq(coupleDates.coupleId, coupleId), eq(coupleDates.completed, true)));
-
-    const totalCompleted = Number(stats.totalCompleted ?? 0);
-    const firstDate = stats.firstCompletedAt ? new Date(stats.firstCompletedAt) : null;
-    const daysActive = firstDate
-      ? Math.floor((Date.now() - firstDate.getTime()) / (1000 * 60 * 60 * 24))
-      : 0;
-
-    const allCompleted = await db
-      .select({ category: coupleDates.dateId })
-      .from(coupleDates)
-      .where(and(eq(coupleDates.coupleId, coupleId), eq(coupleDates.completed, true)));
-
-    const categoriesCompleted = new Set(allCompleted.map((r) => r.category)).size;
+    const [catalogCompleted, customCompleted] = await Promise.all([
+      db.select({ category: sql<string>`coalesce(${coupleDates.customCategory}, ${dateIdeas.category})`, completedAt: coupleDates.completedAt })
+        .from(coupleDates).innerJoin(dateIdeas, eq(coupleDates.dateId, dateIdeas.id))
+        .where(and(eq(coupleDates.coupleId, coupleId), eq(coupleDates.completed, true))),
+      db.select({ category: customDates.category, completedAt: customDates.completedAt })
+        .from(customDates).where(and(eq(customDates.coupleId, coupleId), eq(customDates.completed, true))),
+    ]);
+    const completed = [...catalogCompleted, ...customCompleted];
+    const totalCompleted = completed.length;
+    const categoriesCompleted = new Set(completed.map(date => date.category)).size;
+    const timestamps = completed.flatMap(date => date.completedAt ? [date.completedAt.getTime()] : []);
+    const daysActive = timestamps.length ? Math.max(0, Math.floor((Date.now() - Math.min(...timestamps)) / 86_400_000)) : 0;
 
     return Response.json({
       user: {
@@ -66,6 +60,7 @@ export async function GET(request: Request) {
         id: coupleId,
         joinedAt: coupleRow.createdAt,
         partnerName,
+        partnerAvatarUrl,
       },
       stats: {
         totalCompleted,

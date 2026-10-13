@@ -25,7 +25,8 @@ pnpm start
 ## Funciones
 
 - Onboarding, acceso con Google mediante Clerk, nombre y avatar.
-- Crear o conectar una pareja con código, listado, búsqueda, filtros y progreso.
+- Crear o conectar una pareja con código, listado virtualizado, búsqueda diferida, filtros conservados al volver y progreso.
+- Componentes shadcn con Tailwind y fondos WebP; fotos privadas con miniaturas bajo autorización.
 - Crear citas propias, personalizar y restaurar las del catálogo.
 - Completar citas con fecha, lugar, notas y fotos; reintentar fotos fallidas.
 - Autocompletado y geocodificación inversa con Geoapify, GPS y selección en mapa.
@@ -57,18 +58,16 @@ El service worker guarda el shell offline y los recursos estáticos. No almacena
 5. Usar HTTPS: necesario para la instalación PWA, GPS y service worker fuera de localhost.
 6. Verificar con una cuenta real el login, vinculación, creación/completado y subida de fotos antes de publicar a usuarios.
 
-No se ha desplegado esta implementación. El acceso a Clerk, Neon, R2 y Geoapify se comprobó con peticiones de solo lectura. El login OAuth y las modificaciones reales requieren una sesión del usuario y no están cubiertos por la validación local.
+El proyecto de Vercel es `cien-citas-web` y utiliza las variables de `.env.local` configuradas de forma privada. El acceso a Clerk, Neon, R2 y Geoapify se comprobó con peticiones de solo lectura. El login OAuth y las modificaciones reales requieren una sesión del usuario y no están cubiertos por la validación local.
 
 ## Validación
 
 ```powershell
 pnpm lint
 pnpm typecheck
-pnpm test
 pnpm build
-pnpm test:e2e
 ```
 
-Las pruebas unitarias cubren autenticación, aislamiento y borrado offline, fotos privadas, Geoapify y recuperación de una respuesta de guardado perdida. Playwright usa Chrome en viewport móvil y datos de prueba exclusivamente locales para comprobar instalación, APIs sin sesión, búsqueda/filtros, navegación offline, fotos, visor y perfil. No sustituye una prueba autenticada contra los servicios reales.
+La revisión actual utiliza TypeScript, ESLint y la compilación de producción. No se crean ni se ejecutan tests. El alcance funcional y los límites de verificación están en [docs/functional-review.md](docs/functional-review.md).
 
 `node scripts/verify-services.mjs` permite repetir las comprobaciones de conectividad de solo lectura sin imprimir credenciales.

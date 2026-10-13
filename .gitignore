@@ -10,3 +10,6 @@ test-results/
 
 public/offline.html
 public/offline-ui.*
+
+.vercel/
+.vercel
