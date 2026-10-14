@@ -30,6 +30,12 @@ export function clearApiCache() {
   cachedReads.clear();
   pendingReads.clear();
 }
+export function invalidateApiCache(paths: string[]) {
+  paths.forEach((path) => {
+    cachedReads.delete(path);
+    pendingReads.delete(path);
+  });
+}
 function cacheable(path: string) {
   return (
     typeof window !== 'undefined' &&

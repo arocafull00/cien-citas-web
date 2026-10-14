@@ -2,20 +2,32 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import { DATE_CATEGORIES } from '@/constants/dates';
 import { apiClient } from '@/lib/api-client';
 import type { DateDetail, DateEntry } from '@/lib/types';
 import { BackHeader } from './mobile-shell';
 import { useApp } from './app-provider';
 import { ConfirmDialog } from './ui';
+const formFrom = (date: DateDetail | null) => ({
+  title: date?.title || '',
+  description: date?.description || '',
+  category: date?.category || '',
+  difficulty: date?.difficulty || '',
+});
+export function EditDateRoute() {
+  const id = useSearchParams().get('id');
+  if (!id) notFound();
+  return <DateForm key={id} id={id} />;
+}
 export function DateForm({ id }: { id?: string }) {
-  const { getDetail, refresh, online, rememberDetail } = useApp();
+  const { getDetail, peekDetail, refresh, online, rememberDetail } = useApp();
   const router = useRouter();
-  const [date, setDate] = useState<DateDetail | null>(null);
-  const [form, setForm] = useState({ title: '', description: '', category: '', difficulty: '' });
-  const [ready, setReady] = useState(!id);
+  const [date, setDate] = useState<DateDetail | null>(() => (id ? peekDetail(id) : null));
+  const [form, setForm] = useState(() => formFrom(date));
+  const initialForm = useRef(form);
+  const [ready, setReady] = useState(!id || Boolean(date));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reset, setReset] = useState(false);
@@ -26,12 +38,7 @@ export function DateForm({ id }: { id?: string }) {
       .then((d) => {
         if (!cancelled) {
           setDate(d);
-          setForm({
-            title: d.title,
-            description: d.description,
-            category: d.category,
-            difficulty: d.difficulty,
-          });
+          setForm((current) => (current === initialForm.current ? formFrom(d) : current));
           setReady(true);
         }
       })
@@ -148,9 +155,7 @@ export function DateForm({ id }: { id?: string }) {
               </Button>
             </div>
           </form>
-        ) : (
-          <p>Cargando cita…</p>
-        )}
+        ) : null}
         {date?.isCustomized && !date.isCustom ? (
           <Button variant="text" disabled={busy || !online} onClick={() => setReset(true)}>
             Restaurar la idea original

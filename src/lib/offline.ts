@@ -6,10 +6,16 @@ export const OFFLINE_DB = '100citas-offline-v1';
 const PHOTO_PREFIX = '100citas-photos-v1-';
 const MAX_PHOTOS = 100;
 const PHOTO_AGE = 30 * 24 * 60 * 60 * 1000;
+const MAX_PHOTO_URLS = 150;
+const photoUrls = new Map<string, string>();
+const pendingPhotoUrls = new Map<string, Promise<string>>();
 let generation = 0;
 export const currentGeneration = () => generation;
 export const beginContext = () => {
   clearApiCache();
+  photoUrls.forEach((url) => URL.revokeObjectURL(url));
+  photoUrls.clear();
+  pendingPhotoUrls.clear();
   return ++generation;
 };
 export const snapshotKey = (snapshot: Pick<Snapshot, 'account' | 'couple'>) =>
@@ -111,4 +117,42 @@ export async function loadPhoto(
     if (generation !== expectedGeneration) await cache.delete(requestUrl);
   }
   return blob;
+}
+
+type PhotoVariant = 'original' | 'thumbnail';
+const photoUrlKey = (url: string, scope: string, variant: PhotoVariant) =>
+  `${scope}
+${variant}
+${url}`;
+export function peekPhotoUrl(url: string, scope: string, variant: PhotoVariant) {
+  return photoUrls.get(photoUrlKey(url, scope, variant));
+}
+export function loadPhotoUrl(
+  url: string,
+  scope: string,
+  expectedGeneration: number,
+  variant: PhotoVariant = 'original',
+): Promise<string> {
+  const key = photoUrlKey(url, scope, variant);
+  const existing = photoUrls.get(key);
+  if (existing) return Promise.resolve(existing);
+  const pending = pendingPhotoUrls.get(key);
+  if (pending) return pending;
+  const promise = loadPhoto(url, scope, expectedGeneration, variant)
+    .then((blob) => {
+      if (generation !== expectedGeneration) throw new Error('La sesión ha cambiado');
+      const objectUrl = URL.createObjectURL(blob);
+      photoUrls.set(key, objectUrl);
+      if (photoUrls.size > MAX_PHOTO_URLS) {
+        const [oldestKey, oldestUrl] = photoUrls.entries().next().value!;
+        photoUrls.delete(oldestKey);
+        URL.revokeObjectURL(oldestUrl);
+      }
+      return objectUrl;
+    })
+    .finally(() => {
+      if (pendingPhotoUrls.get(key) === promise) pendingPhotoUrls.delete(key);
+    });
+  pendingPhotoUrls.set(key, promise);
+  return promise;
 }

@@ -9,8 +9,13 @@ export function FeedScreen() {
   const navigate = useCallback((href: string) => router.push(href), [router]);
   const { account, couple, dates, scope, refresh, online } = useApp();
   const greeting = [account?.name, couple?.partner?.name].filter(Boolean).join(' y ');
+  function prefetch(event: React.PointerEvent) {
+    if (!online || !(event.target instanceof Element)) return;
+    const href = event.target.closest('a')?.getAttribute('href');
+    if (href?.startsWith('/') && !href.startsWith('/offline')) router.prefetch(href);
+  }
   return (
-    <div className="with-nav">
+    <div className="with-nav" onPointerDown={prefetch}>
       <DateGrid
         key={scope}
         navigate={online ? navigate : undefined}

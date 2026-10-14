@@ -1,10 +1,9 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Settings, Camera } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
-import { readSnapshot } from '@/lib/offline';
 import { uploadImage } from '@/lib/upload';
 import type { Achievement, Profile } from '@/lib/types';
 import { useApp } from './app-provider';
@@ -12,23 +11,18 @@ import { BottomNav, MobileLink } from './mobile-shell';
 import { ProfileView } from './profile-view';
 
 export function ProfileScreen() {
-  const { account, couple, scope, dates, online, rememberProfile, refresh } = useApp();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [name, setName] = useState(account?.name || '');
+  const { account, scope, dates, online, rememberProfile, refresh, peekProfile } = useApp();
+  const [saved] = useState(peekProfile);
+  const [profile, setProfile] = useState<Profile | null>(saved?.profile ?? null);
+  const [achievements, setAchievements] = useState<Achievement[]>(saved?.achievements ?? []);
+  const [name, setName] = useState(saved?.profile.user.name ?? account?.name ?? '');
+  const initialName = useRef(name);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const saved = await readSnapshot(account?.clerkUserId, couple?.id);
-      if (cancelled) return;
-      if (saved?.profile) {
-        setProfile(saved.profile);
-        setAchievements(saved.achievements);
-        setName(saved.profile.user.name);
-      }
       if (!online) return;
       try {
         const [data, badges] = await Promise.all([
@@ -37,7 +31,7 @@ export function ProfileScreen() {
         ]);
         if (cancelled) return;
         setProfile(data);
-        setName(data.user.name);
+        setName((current) => (current === initialName.current ? data.user.name : current));
         setAchievements(badges.achievements);
         rememberProfile(data, badges.achievements, scope);
       } catch (e) {
@@ -48,7 +42,7 @@ export function ProfileScreen() {
     return () => {
       cancelled = true;
     };
-  }, [account?.clerkUserId, couple?.id, online, scope, rememberProfile]);
+  }, [online, scope, rememberProfile]);
   async function saveName(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -91,9 +85,7 @@ export function ProfileScreen() {
             completed={dates.filter((d) => d.completed).length}
             total={100 + dates.filter((d) => d.isCustom).length}
           />
-        ) : (
-          <p>Cargando vuestro perfil…</p>
-        )}
+        ) : null}
         <section className="profile-edit">
           <h2>Tu perfil</h2>
           <form onSubmit={(e) => void saveName(e)}>

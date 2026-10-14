@@ -10,13 +10,14 @@ import {
 } from 'react';
 import { useAuth, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { apiClient, ApiError } from '@/lib/api-client';
+import { apiClient, ApiError, invalidateApiCache } from '@/lib/api-client';
 import {
   beginContext,
   clearPrivateData,
   currentGeneration,
   readSnapshot,
   saveSnapshot,
+  snapshotKey,
 } from '@/lib/offline';
 import type {
   Account,
@@ -39,6 +40,8 @@ type AppState = {
   updatedAt: string | null;
   refresh: () => Promise<void>;
   getDetail: (id: string) => Promise<DateDetail>;
+  peekDetail: (id: string, options?: { partial?: boolean }) => DateDetail | null;
+  peekProfile: () => { profile: Profile; achievements: Achievement[] } | null;
   rememberDetail: (date: DateDetail) => void;
   signOut: () => Promise<void>;
   reset: () => Promise<void>;
@@ -84,6 +87,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await clearPrivateData();
   }, []);
 
+  const rememberProfile = useCallback(
+    (profile: Profile, achievements: Achievement[], expectedScope: string) => {
+      const current = snapshot.current;
+      if (!current || `${current.account.clerkUserId}:${current.couple.id}` !== expectedScope)
+        return;
+      const next = { ...current, profile, achievements };
+      snapshot.current = next;
+      void saveSnapshot(next, currentGeneration()).catch(() => {});
+    },
+    [],
+  );
   const refresh = useCallback(async () => {
     if (!isLoaded || !userId) {
       setLoading(false);
@@ -139,6 +153,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if ('error' in listResult) throw listResult.error;
       const list = listResult.value;
       if (epoch !== requestEpoch.current) return;
+      const known = new Map((snapshot.current?.dates || []).map((date) => [date.id, date]));
+      const changed = list.dates.filter((date) => {
+        const old = known.get(date.id);
+        return (
+          !old || (Object.keys(date) as (keyof DateEntry)[]).some((key) => old[key] !== date[key])
+        );
+      });
+      invalidateApiCache([
+        ...changed.map((date) => `/api/dates/${date.id}`),
+        ...(changed.length ? ['/api/profile/me', '/api/profile/achievements'] : []),
+      ]);
       const next: Snapshot = {
         account: accountResult.account,
         couple: coupleResult.couple,
@@ -167,6 +192,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       void saveSnapshot(next, gen).catch(() =>
         setError('No hay espacio para guardar los recuerdos sin conexión.'),
       );
+      if (!next.profile)
+        void Promise.all([
+          apiClient.get<Profile>('/api/profile/me'),
+          apiClient.get<{ achievements: Achievement[] }>('/api/profile/achievements'),
+        ])
+          .then(([profile, badges]) =>
+            rememberProfile(profile, badges.achievements, snapshotKey(next)),
+          )
+          .catch(() => {});
     } catch (failure) {
       if (epoch !== requestEpoch.current) return;
       if (failure instanceof ApiError && [401, 403].includes(failure.status)) {
@@ -187,7 +221,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally {
       if (epoch === requestEpoch.current) setLoading(false);
     }
-  }, [isLoaded, userId, reset, router]);
+  }, [isLoaded, userId, reset, router, rememberProfile]);
 
   useEffect(() => {
     const sync = () => setOnline(navigator.onLine);
@@ -286,6 +320,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [rememberDetail],
   );
 
+  const peekDetail = useCallback((id: string, options: { partial?: boolean } = {}) => {
+    const current = snapshot.current;
+    const entry = current?.dates.find((date) => date.id === id);
+    const saved = current?.details[id];
+    if (
+      saved &&
+      (!entry ||
+        (saved.title === entry.title &&
+          saved.completed === entry.completed &&
+          saved.completedAt === entry.completedAt &&
+          saved.images.length === entry.imageCount))
+    )
+      return saved;
+    if (!entry || !options.partial) return null;
+    return {
+      id: entry.id,
+      isCustom: entry.isCustom,
+      title: entry.title,
+      description: entry.description,
+      category: entry.category,
+      difficulty: entry.difficulty,
+      isCustomized: entry.isCustomized,
+      completed: entry.completed,
+      completedAt: entry.completedAt,
+      locationName: entry.locationName,
+      locationLat: null,
+      locationLng: null,
+      notes: entry.notes,
+      coupleDateId: entry.coupleDateId,
+      images: entry.coverImageUrl ? [{ id: 'cover', url: entry.coverImageUrl }] : [],
+    };
+  }, []);
+  const peekProfile = useCallback(() => {
+    const current = snapshot.current;
+    return current?.profile
+      ? { profile: current.profile, achievements: current.achievements }
+      : null;
+  }, []);
+
   const signOut = useCallback(async () => {
     await reset();
     const channel = new BroadcastChannel('100citas-session');
@@ -293,17 +366,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     channel.close();
     await clerk.signOut({ redirectUrl: '/login' });
   }, [clerk, reset]);
-  const rememberProfile = useCallback(
-    (profile: Profile, achievements: Achievement[], expectedScope: string) => {
-      const current = snapshot.current;
-      if (!current || `${current.account.clerkUserId}:${current.couple.id}` !== expectedScope)
-        return;
-      const next = { ...current, profile, achievements };
-      snapshot.current = next;
-      void saveSnapshot(next, currentGeneration()).catch(() => {});
-    },
-    [],
-  );
   const scope = couple && userId ? `${userId}:${couple.id}` : '';
   const value = useMemo(
     () => ({
@@ -317,6 +379,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       scope,
       refresh,
       getDetail,
+      peekDetail,
+      peekProfile,
       rememberDetail,
       rememberProfile,
       signOut,
@@ -334,6 +398,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       scope,
       refresh,
       getDetail,
+      peekDetail,
+      peekProfile,
       rememberDetail,
       rememberProfile,
       signOut,

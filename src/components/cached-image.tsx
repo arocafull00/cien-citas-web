@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { currentGeneration, loadPhoto } from '@/lib/offline';
+import { currentGeneration, loadPhotoUrl, peekPhotoUrl } from '@/lib/offline';
 export function CachedImage({
   src,
   alt,
@@ -18,74 +18,71 @@ export function CachedImage({
   variant?: 'original' | 'thumbnail';
   fallback?: string;
 }) {
-  const [result, setResult] = useState<{
-    source: string;
-    blob: string | null;
-    failed: boolean;
-  } | null>(null);
+  const [result, setResult] = useState<{ source: string; url: string | null } | null>(null);
   const container = useRef<HTMLElement | null>(null);
   const setContainer = (element: HTMLElement | null) => {
     container.current = element;
   };
   const source = `${scope || ''}:${variant}:${src}`;
   const local = src.startsWith('/') || !scope || /^https:\/\/[^/]*clerk\.(com|dev)\//.test(src);
+  const url =
+    (local ? src : peekPhotoUrl(src, scope!, variant)) ??
+    (result?.source === source ? result.url : undefined);
+  const pending = url === undefined;
   useEffect(() => {
-    if (local) return;
+    if (!pending) return;
     let cancelled = false;
-    let objectUrl: string | undefined;
     const gen = currentGeneration();
     const load = () => {
-      void loadPhoto(src, scope!, gen, variant)
-        .then((blob) => {
-          objectUrl = URL.createObjectURL(blob);
-          if (!cancelled && gen === currentGeneration())
-            setResult({ source, blob: objectUrl, failed: false });
-          else URL.revokeObjectURL(objectUrl);
+      void loadPhotoUrl(src, scope!, gen, variant)
+        .then((objectUrl) => {
+          if (!cancelled) setResult({ source, url: objectUrl });
         })
         .catch(() => {
-          if (!cancelled) setResult({ source, blob: null, failed: true });
+          if (!cancelled && gen === currentGeneration()) setResult({ source, url: null });
         });
     };
     let observer: IntersectionObserver | undefined;
     if (props.loading === 'lazy' && container.current) {
-      observer = new IntersectionObserver((entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          observer?.disconnect();
-          load();
-        }
-      });
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            observer?.disconnect();
+            load();
+          }
+        },
+        { rootMargin: '400px 0px' },
+      );
       observer.observe(container.current);
     } else load();
     return () => {
       cancelled = true;
       observer?.disconnect();
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [src, source, scope, local, props.loading, variant]);
-  if (local) return <img decoding="async" src={src} alt={alt} className={className} {...props} />;
-  if (!result || result.source !== source || !result.blob) {
-    const failed = Boolean(result?.failed && result.source === source);
-    if (fallback)
-      return (
-        <img
-          ref={setContainer}
-          decoding="async"
-          src={fallback}
-          alt={alt}
-          className={className}
-          {...props}
-        />
-      );
+  }, [pending, src, source, scope, props.loading, variant]);
+  if (url) return <img decoding="async" src={url} alt={alt} className={className} {...props} />;
+  const preview =
+    !local && variant === 'original' ? peekPhotoUrl(src, scope!, 'thumbnail') : undefined;
+  const placeholder = preview || fallback;
+  if (placeholder)
     return (
-      <span
+      <img
         ref={setContainer}
-        role="img"
-        aria-label={alt}
-        className={`image-placeholder ${failed ? '' : 'loading'} ${className}`}
-      >
-        {failed ? 'Foto no disponible' : null}
-      </span>
+        decoding="async"
+        src={placeholder}
+        alt={alt}
+        className={className}
+        {...props}
+      />
     );
-  }
-  return <img decoding="async" src={result.blob} alt={alt} className={className} {...props} />;
+  return (
+    <span
+      ref={setContainer}
+      role="img"
+      aria-label={alt}
+      className={`image-placeholder ${className}`}
+    >
+      {url === null ? 'Foto no disponible' : null}
+    </span>
+  );
 }

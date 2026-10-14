@@ -348,19 +348,6 @@ select:focus-visible {
   text-align: center;
   padding: 12px;
 }
-.image-placeholder.loading {
-  background: linear-gradient(100deg, var(--soft) 30%, var(--panel) 50%, var(--soft) 70%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s linear infinite;
-}
-@keyframes shimmer {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: -100% 0;
-  }
-}
 .refresh-indicator {
   display: flex;
   align-items: center;

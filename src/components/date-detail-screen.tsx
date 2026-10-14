@@ -7,12 +7,18 @@ import { useApp } from './app-provider';
 import { DateDetailView } from './date-detail';
 import { ConfirmDialog } from './ui';
 export function DateDetailScreen({ id }: { id: string }) {
-  const { getDetail, scope, online, refresh, rememberDetail } = useApp();
-  const [date, setDate] = useState<DateDetail | null>(null);
+  const { getDetail, peekDetail, scope, online, refresh, rememberDetail } = useApp();
+  const [date, setDate] = useState<DateDetail | null>(() => peekDetail(id, { partial: true }));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<'undo' | 'delete' | null>(null);
   const router = useRouter();
+  useEffect(() => {
+    if (!online) return;
+    router.prefetch(`/complete-date?id=${id}`);
+    router.prefetch(`/edit-date?id=${id}`);
+    router.prefetch('/dates');
+  }, [id, online, router]);
   useEffect(() => {
     let cancelled = false;
     void getDetail(id)
@@ -58,9 +64,7 @@ export function DateDetailScreen({ id }: { id: string }) {
             <p role="alert">{error}</p>
             <a href="/dates">Volver a las citas</a>
           </>
-        ) : (
-          <span className="spinner" />
-        )}
+        ) : null}
       </main>
     );
   return (
@@ -77,6 +81,7 @@ export function DateDetailScreen({ id }: { id: string }) {
         undo={() => setConfirm('undo')}
         remove={() => setConfirm('delete')}
         busy={busy}
+        navigate={online ? router.push : undefined}
       />
       {confirm ? (
         <ConfirmDialog

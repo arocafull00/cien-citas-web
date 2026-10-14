@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import { Camera, X, Trash2 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { persistCompletedDate } from '@/lib/persist-completed-date';
@@ -24,23 +24,31 @@ type Photo = {
 export function localDateInput(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
+export function CompleteDateRoute() {
+  const id = useSearchParams().get('id');
+  if (!id) notFound();
+  return <CompleteDateForm key={id} id={id} />;
+}
 export function CompleteDateForm({ id }: { id: string }) {
-  const { getDetail, rememberDetail, scope, refresh, online } = useApp();
+  const { getDetail, peekDetail, rememberDetail, scope, refresh, online } = useApp();
   const router = useRouter();
-  const [date, setDate] = useState<DateDetail | null>(null);
-  const [day, setDay] = useState(localDateInput(new Date()));
-  const [location, setLocation] = useState({
-    name: '',
-    lat: null as number | null,
-    lng: null as number | null,
-  });
-  const [notes, setNotes] = useState('');
+  const [date, setDate] = useState<DateDetail | null>(() => peekDetail(id));
+  const [day, setDay] = useState(() =>
+    localDateInput(date?.completedAt ? new Date(date.completedAt) : new Date()),
+  );
+  const [location, setLocation] = useState(() => ({
+    name: date?.locationName || '',
+    lat: date?.locationLat ?? (null as number | null),
+    lng: date?.locationLng ?? (null as number | null),
+  }));
+  const [notes, setNotes] = useState(() => date?.notes || '');
+  const initial = useRef({ day, location, notes });
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [remove, setRemove] = useState<string | null>(null);
   const [completionSaved, setCompletionSaved] = useState(false);
-  const completionTime = useRef(new Date());
+  const completionTime = useRef(date?.completedAt ? new Date(date.completedAt) : new Date());
   const previewUrls = useRef(new Set<string>());
   useEffect(() => {
     let cancelled = false;
@@ -49,9 +57,17 @@ export function CompleteDateForm({ id }: { id: string }) {
         if (cancelled) return;
         setDate(d);
         completionTime.current = d.completedAt ? new Date(d.completedAt) : new Date();
-        setDay(localDateInput(d.completedAt ? new Date(d.completedAt) : new Date()));
-        setLocation({ name: d.locationName || '', lat: d.locationLat, lng: d.locationLng });
-        setNotes(d.notes || '');
+        setDay((current) =>
+          current === initial.current.day
+            ? localDateInput(d.completedAt ? new Date(d.completedAt) : new Date())
+            : current,
+        );
+        setLocation((current) =>
+          current === initial.current.location
+            ? { name: d.locationName || '', lat: d.locationLat, lng: d.locationLng }
+            : current,
+        );
+        setNotes((current) => (current === initial.current.notes ? d.notes || '' : current));
       })
       .catch((e) => {
         if (!cancelled) setError(e.message);
@@ -295,9 +311,7 @@ export function CompleteDateForm({ id }: { id: string }) {
               <p className="connection-notice">Necesitas conexión para guardar este recuerdo.</p>
             ) : null}
           </>
-        ) : (
-          <p>Cargando cita…</p>
-        )}
+        ) : null}
       </main>
       {remove ? (
         <ConfirmDialog

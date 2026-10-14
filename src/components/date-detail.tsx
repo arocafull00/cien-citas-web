@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CalendarDays, MapPin, Heart, Pencil } from 'lucide-react';
 import { getCardBackground } from '@/constants/date-card';
 import type { DateDetail } from '@/lib/types';
+import { handleDateNavigation, type DateNavigation } from '@/lib/date-navigation';
 import { CachedImage } from './cached-image';
 import { PhotoViewer } from './photo-viewer';
 export function DateDetailView({
@@ -13,6 +14,7 @@ export function DateDetailView({
   undo,
   remove,
   busy = false,
+  navigate,
 }: {
   date: DateDetail;
   scope: string;
@@ -20,8 +22,11 @@ export function DateDetailView({
   undo?: () => void;
   remove?: () => void;
   busy?: boolean;
+  navigate?: DateNavigation;
 }) {
   const [photo, setPhoto] = useState<number | null>(null);
+  const editHref = `/edit-date?id=${date.id}`;
+  const completeHref = `/complete-date?id=${date.id}`;
   const coords = date.locationLat !== null && date.locationLng !== null;
   const mapUrl = coords
     ? `https://www.google.com/maps/search/?api=1&query=${date.locationLat},${date.locationLng}`
@@ -38,8 +43,14 @@ export function DateDetailView({
       ) : (
         <DetailHeader
           title={date.isCustom ? 'Vuestra cita' : `Cita ${date.id}`}
+          navigate={navigate}
           action={
-            <a href={`/edit-date?id=${date.id}`} className="icon-button" aria-label="Editar cita">
+            <a
+              href={editHref}
+              className="icon-button"
+              aria-label="Editar cita"
+              onClick={(event) => handleDateNavigation(event, editHref, navigate)}
+            >
               <Pencil size={19} />
             </a>
           }
@@ -152,7 +163,11 @@ export function DateDetailView({
       </main>
       {!readonly ? (
         <div className="sticky-action">
-          <a className="button" href={`/complete-date?id=${date.id}`}>
+          <a
+            className="button"
+            href={completeHref}
+            onClick={(event) => handleDateNavigation(event, completeHref, navigate)}
+          >
             <Heart size={18} />
             {date.completed ? 'Editar nuestro recuerdo' : '¡La hemos vivido!'}
           </a>
@@ -170,10 +185,22 @@ export function DateDetailView({
   );
 }
 
-function DetailHeader({ title, action }: { title: string; action: React.ReactNode }) {
+function DetailHeader({
+  title,
+  action,
+  navigate,
+}: {
+  title: string;
+  action: React.ReactNode;
+  navigate?: DateNavigation;
+}) {
   return (
     <header className="back-header">
-      <a className="text-button" href="/dates">
+      <a
+        className="text-button"
+        href="/dates"
+        onClick={(event) => handleDateNavigation(event, '/dates', navigate)}
+      >
         ← Citas
       </a>
       <h1>{title}</h1>
