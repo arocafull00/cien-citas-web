@@ -8,7 +8,12 @@ export async function uploadImage(file: File, target?: { id: string; isCustom: b
   validateImage(file);
   const body = { filename: file.name, contentType: file.type, ...(target ? target.isCustom ? { customDateId: target.id } : { coupleDateId: target.id } : {}) };
   const { presignedUrl, publicUrl } = await apiClient.post<{ presignedUrl: string; publicUrl: string }>(target ? '/api/upload/presign' : '/api/profile/avatar-presign', body);
-  const response = await fetch(presignedUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+  let response: Response;
+  try {
+    response = await fetch(presignedUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+  } catch {
+    throw new Error('No se pudo conectar con el almacenamiento de fotos. Puedes volver a intentarlo.');
+  }
   if (!response.ok) throw new Error('No se pudo subir la foto. Puedes volver a intentarlo.');
   if (!target) { await apiClient.patch('/api/profile/me', { avatarUrl: publicUrl }); return { id: 'avatar', url: publicUrl }; }
   const { imageId } = await apiClient.post<{ imageId: string }>('/api/upload/confirm', { ...(target.isCustom ? { customDateId: target.id } : { coupleDateId: target.id }), url: publicUrl });

@@ -12,6 +12,7 @@ const withSerwist = withSerwistInit({
 });
 
 export default withSerwist({
+  experimental: { staleTimes: { dynamic: 60 } },
   async headers() {
     return [
       { source: '/api/:path*', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },

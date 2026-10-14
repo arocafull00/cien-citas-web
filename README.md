@@ -54,7 +54,7 @@ El service worker guarda el shell offline y los recursos estáticos. No almacena
 1. Importar esta carpeta como proyecto Next.js. Instalación: `pnpm install`; compilación: `pnpm build`.
 2. Configurar todas las variables de `.env.example` en el entorno correspondiente, sin subir `.env.local`.
 3. Configurar el dominio web y los orígenes/redirecciones permitidos en la instancia de Clerk; comprobar Google y `/sso-callback` en ese dominio. Mantener la misma instancia para compartir usuarios con Expo.
-4. Permitir el origen web en el CORS del bucket R2 para las subidas firmadas: método `PUT` y cabecera `Content-Type`. Para desarrollo, incluir `http://localhost:3002`. Mantener los orígenes necesarios para la aplicación original.
+4. En Cloudflare → R2 → `cien-citas-imagenes` → Settings → CORS policy, aplicar [docs/r2-cors.json](docs/r2-cors.json) para permitir subidas firmadas desde localhost y el dominio de producción. Añadir a `AllowedOrigins` cualquier dominio propio usado por la web y conservar reglas existentes de otros clientes. Sin esta configuración, R2 rechaza el preflight del navegador con `403 CORS not configured for this bucket`, aunque la firma sea válida y las subidas desde el servidor funcionen. Las credenciales con permisos de objetos no permiten modificar la configuración del bucket.
 5. Usar HTTPS: necesario para la instalación PWA, GPS y service worker fuera de localhost.
 6. Verificar con una cuenta real el login, vinculación, creación/completado y subida de fotos antes de publicar a usuarios.
 

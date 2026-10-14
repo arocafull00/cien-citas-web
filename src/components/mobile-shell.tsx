@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { ArrowLeft, BookHeart, Heart, UserRound } from 'lucide-react';
+import { ArrowLeft, BookHeart, UserRound } from 'lucide-react';
 import { useApp } from './app-provider';
 
 export function MobileLink({ href, children, ...props }: React.ComponentProps<typeof Link>) {
@@ -19,7 +19,7 @@ export function BackHeader({ title, back = '/dates', action }: { title: string; 
 }
 export function BottomNav() {
   const path = usePathname();
-  return <nav className="bottom-nav" aria-label="Navegación principal"><MobileLink href="/dates" aria-current={path === '/dates' ? 'page' : undefined}><BookHeart size={23} /><span>Citas</span></MobileLink><span className="nav-heart" aria-hidden="true"><Heart size={20} /></span><MobileLink href="/profile" aria-current={path === '/profile' ? 'page' : undefined}><UserRound size={23} /><span>Nosotros</span></MobileLink></nav>;
+  return <nav className="bottom-nav" aria-label="Navegación principal"><MobileLink href="/dates" aria-current={path === '/dates' ? 'page' : undefined}><BookHeart size={23} /><span>Citas</span></MobileLink><MobileLink href="/profile" aria-current={path === '/profile' ? 'page' : undefined}><UserRound size={23} /><span>Nosotros</span></MobileLink></nav>;
 }
 export function ConnectionNotice() {
   const { online, error, updatedAt, refresh } = useApp();

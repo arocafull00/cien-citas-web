@@ -52,11 +52,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       const [accountResult, coupleResult] = await Promise.all([
-        apiClient.get<{ account: Account }>('/api/account'), apiClient.get<{ couple: Couple | null }>('/api/couples/me'),
+        apiClient.get<{ account: Account }>('/api/account', { fresh: true }), apiClient.get<{ couple: Couple | null }>('/api/couples/me', { fresh: true }),
       ]);
       if (epoch !== requestEpoch.current) return;
       if (!coupleResult.couple?.partner) {
         await clearPrivateData({ preserveProfileSetup: true });
+        if (epoch !== requestEpoch.current) return;
         snapshot.current = null; setAccount(accountResult.account); setCouple(null); setDates([]);
         return;
       }
@@ -68,12 +69,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         snapshot.current = null; setDates([]); await clearPrivateData(); gen = currentGeneration();
       }
       setAccount(accountResult.account); setCouple(coupleResult.couple);
-      const list = await apiClient.get<{ dates: DateEntry[] }>('/api/dates');
+      const list = await apiClient.get<{ dates: DateEntry[] }>('/api/dates', { fresh: true });
       if (epoch !== requestEpoch.current) return;
       const next: Snapshot = {
         account: accountResult.account, couple: coupleResult.couple, dates: list.dates,
-        details: previous?.couple.id === coupleResult.couple.id ? previous.details : {},
-        profile: previous?.profile || null, achievements: previous?.achievements || [], updatedAt: new Date().toISOString(),
+        details: snapshot.current?.details || previous?.details || {},
+        profile: snapshot.current?.profile || previous?.profile || null, achievements: snapshot.current?.achievements || previous?.achievements || [], updatedAt: new Date().toISOString(),
       };
       snapshot.current = next; setDates(previous => {
         const byId = new Map(previous.map(date => [date.id, date]));
@@ -115,6 +116,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const saved = await readSnapshot();
         if (cancelled) return;
         if (!userId || (saved && saved.account.clerkUserId !== userId)) await clearPrivateData();
+        else if (saved?.couple.partner) {
+          snapshot.current = saved;
+          setAccount(saved.account); setCouple(saved.couple); setDates(saved.dates); setUpdatedAt(saved.updatedAt); setLoading(false);
+        }
       }
       if (!cancelled) await refresh();
     }

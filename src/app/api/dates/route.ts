@@ -21,28 +21,41 @@ export async function GET(request: Request) {
     const categoryFilter = url.searchParams.get('category') as DateCategory | null;
     const completedFilter = url.searchParams.get('completed');
 
-    const ideas = await db.select().from(dateIdeas).orderBy(asc(dateIdeas.id));
-
-    const rows = await db
-      .select({
-        coupleDate: coupleDates,
-        imageCount: count(dateImages.id),
-      })
-      .from(coupleDates)
-      .leftJoin(dateImages, eq(dateImages.coupleDateId, coupleDates.id))
-      .where(eq(coupleDates.coupleId, coupleId))
-      .groupBy(coupleDates.id);
+    const [ideas, rows, imageRows, customRows, customImageRows] = await Promise.all([
+      db.select().from(dateIdeas).orderBy(asc(dateIdeas.id)),
+      db
+        .select({
+          coupleDate: coupleDates,
+          imageCount: count(dateImages.id),
+        })
+        .from(coupleDates)
+        .leftJoin(dateImages, eq(dateImages.coupleDateId, coupleDates.id))
+        .where(eq(coupleDates.coupleId, coupleId))
+        .groupBy(coupleDates.id),
+      db
+        .select({ dateId: coupleDates.dateId, url: dateImages.url })
+        .from(dateImages)
+        .innerJoin(coupleDates, eq(dateImages.coupleDateId, coupleDates.id))
+        .where(eq(coupleDates.coupleId, coupleId))
+        .orderBy(asc(dateImages.uploadedAt)),
+      db
+        .select({ customDate: customDates, imageCount: count(customDateImages.id) })
+        .from(customDates)
+        .leftJoin(customDateImages, eq(customDateImages.customDateId, customDates.id))
+        .where(eq(customDates.coupleId, coupleId))
+        .groupBy(customDates.id)
+        .orderBy(desc(customDates.createdAt)),
+      db
+        .select({ customDateId: customDateImages.customDateId, url: customDateImages.url })
+        .from(customDateImages)
+        .innerJoin(customDates, eq(customDateImages.customDateId, customDates.id))
+        .where(eq(customDates.coupleId, coupleId))
+        .orderBy(asc(customDateImages.uploadedAt)),
+    ]);
 
     const coupleDateMap = new Map(
       rows.map((r) => [r.coupleDate.dateId, { ...r.coupleDate, imageCount: Number(r.imageCount) }]),
     );
-
-    const imageRows = await db
-      .select({ dateId: coupleDates.dateId, url: dateImages.url })
-      .from(dateImages)
-      .innerJoin(coupleDates, eq(dateImages.coupleDateId, coupleDates.id))
-      .where(eq(coupleDates.coupleId, coupleId))
-      .orderBy(asc(dateImages.uploadedAt));
 
     const coverImageByDateId = new Map<number, string>();
     for (const row of imageRows) {
@@ -71,24 +84,6 @@ export async function GET(request: Request) {
         coupleDateId: cd?.id ?? null,
       };
     });
-
-    const customRows = await db
-      .select({
-        customDate: customDates,
-        imageCount: count(customDateImages.id),
-      })
-      .from(customDates)
-      .leftJoin(customDateImages, eq(customDateImages.customDateId, customDates.id))
-      .where(eq(customDates.coupleId, coupleId))
-      .groupBy(customDates.id)
-      .orderBy(desc(customDates.createdAt));
-
-    const customImageRows = await db
-      .select({ customDateId: customDateImages.customDateId, url: customDateImages.url })
-      .from(customDateImages)
-      .innerJoin(customDates, eq(customDateImages.customDateId, customDates.id))
-      .where(eq(customDates.coupleId, coupleId))
-      .orderBy(asc(customDateImages.uploadedAt));
 
     const coverImageByCustomId = new Map<string, string>();
     for (const row of customImageRows) {

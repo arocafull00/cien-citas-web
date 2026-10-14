@@ -1,5 +1,6 @@
 import { openDB } from 'idb';
 import type { Snapshot } from './types';
+import { clearApiCache } from './api-client';
 
 export const OFFLINE_DB = '100citas-offline-v1';
 const PHOTO_PREFIX = '100citas-photos-v1-';
@@ -7,7 +8,7 @@ const MAX_PHOTOS = 100;
 const PHOTO_AGE = 30 * 24 * 60 * 60 * 1000;
 let generation = 0;
 export const currentGeneration = () => generation;
-export const beginContext = () => ++generation;
+export const beginContext = () => { clearApiCache(); return ++generation; };
 export const snapshotKey = (snapshot: Pick<Snapshot, 'account' | 'couple'>) => `${snapshot.account.clerkUserId}:${snapshot.couple.id}`;
 const database = () => openDB(OFFLINE_DB, 1, { upgrade(db) { db.createObjectStore('snapshots'); db.createObjectStore('meta'); } });
 
@@ -28,7 +29,7 @@ export async function readSnapshot(userId?: string, coupleId?: string): Promise<
   return value;
 }
 export async function clearPrivateData(options: { preserveProfileSetup?: boolean } = {}) {
-  ++generation;
+  beginContext();
   const db = await database();
   const tx = db.transaction(['snapshots', 'meta'], 'readwrite');
   await Promise.all([tx.objectStore('snapshots').clear(), tx.objectStore('meta').clear()]);

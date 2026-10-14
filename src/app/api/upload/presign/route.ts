@@ -9,6 +9,8 @@ import { eq, and } from 'drizzle-orm';
 function getS3Client(): S3Client {
   return new S3Client({
     region: 'auto',
+    // The browser supplies the body later; do not sign a checksum of an empty file.
+    requestChecksumCalculation: 'WHEN_REQUIRED',
     endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId: process.env.R2_ACCESS_KEY_ID!,

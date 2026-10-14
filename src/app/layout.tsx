@@ -18,10 +18,9 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: '100 Citas', statusBarStyle: 'default' },
   icons: { icon: '/images/favicon.png', apple: '/icons/apple-touch-icon.png' },
 };
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#fcf9f4' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#fcf9f4', colorScheme: 'light' };
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <html lang="es" className={`${lora.variable} ${sans.variable}`} suppressHydrationWarning><body>
-    <script dangerouslySetInnerHTML={{ __html: "try{document.documentElement.dataset.theme=localStorage.getItem('100citas:theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch{}" }} />
+  return <html lang="es" className={`${lora.variable} ${sans.variable}`}><body>
     <div className="app-shell">{children}<PwaControls /></div>
   </body></html>;
 }
