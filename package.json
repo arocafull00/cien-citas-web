@@ -12,7 +12,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "assets:cards": "node scripts/optimize-card-images.mjs"
+    "assets:cards": "node scripts/optimize-card-images.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1048.0",
@@ -46,6 +48,7 @@
     "eslint-config-next": "16.3.8",
     "fake-indexeddb": "^6.2.5",
     "postcss": "^8.5.30",
+    "prettier": "3.6.2",
     "serwist": "9.5.13",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",

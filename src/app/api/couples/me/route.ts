@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 import { requireAuth } from '@/lib/auth-middleware';
 import { db } from '@/db';
 import { couples, users } from '@/db/schema';
@@ -29,11 +29,7 @@ export async function GET(request: Request) {
     let partner: { name: string; avatarUrl: string | null } | null = null;
 
     if (partnerId) {
-      const partnerResult = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, partnerId))
-        .limit(1);
+      const partnerResult = await db.select().from(users).where(eq(users.id, partnerId)).limit(1);
 
       if (partnerResult.length > 0) {
         partner = {

@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { db } from '@/db';
 import {
@@ -42,9 +42,7 @@ export async function DELETE(request: Request) {
       await db.delete(coupleDates).where(eq(coupleDates.coupleId, coupleId));
     }
 
-    await db
-      .delete(coupleAchievements)
-      .where(eq(coupleAchievements.coupleId, coupleId));
+    await db.delete(coupleAchievements).where(eq(coupleAchievements.coupleId, coupleId));
 
     await db.delete(couples).where(eq(couples.id, coupleId));
 

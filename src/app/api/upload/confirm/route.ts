@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { evaluateAfterPhotoAdded } from '@/lib/achievements/evaluate';
 import { db } from '@/db';
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const { userId } = await requireAuth(request);
     const { coupleId } = await requireCouple(userId);
 
-    const { coupleDateId, customDateId, url } = await request.json() as {
+    const { coupleDateId, customDateId, url } = (await request.json()) as {
       coupleDateId?: string;
       customDateId?: string;
       url: string;
@@ -24,9 +24,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const key = typeof url === 'string' && process.env.R2_PUBLIC_URL ? storageKey(url, process.env.R2_PUBLIC_URL) : null;
-    const expectedPrefix = customDateId ? `${coupleId}/custom/${customDateId}/` : `${coupleId}/catalog/${coupleDateId}/`;
-    if (!key?.startsWith(expectedPrefix)) return Response.json({ error: 'Imagen no válida para esta cita' }, { status: 403 });
+    const key =
+      typeof url === 'string' && process.env.R2_PUBLIC_URL
+        ? storageKey(url, process.env.R2_PUBLIC_URL)
+        : null;
+    const expectedPrefix = customDateId
+      ? `${coupleId}/custom/${customDateId}/`
+      : `${coupleId}/catalog/${coupleDateId}/`;
+    if (!key?.startsWith(expectedPrefix))
+      return Response.json({ error: 'Imagen no válida para esta cita' }, { status: 403 });
 
     if (customDateId) {
       const cdRow = await db
@@ -39,10 +45,7 @@ export async function POST(request: Request) {
         return Response.json({ error: 'Cita no encontrada o sin permisos' }, { status: 403 });
       }
 
-      const [image] = await db
-        .insert(customDateImages)
-        .values({ customDateId, url })
-        .returning();
+      const [image] = await db.insert(customDateImages).values({ customDateId, url }).returning();
 
       await evaluateAfterPhotoAdded(coupleId);
 

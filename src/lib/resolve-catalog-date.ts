@@ -7,12 +7,15 @@ type DateIdea = {
   difficulty: string;
 };
 
-type CoupleDateOverrides = {
-  customTitle: string | null;
-  customDescription: string | null;
-  customCategory: string | null;
-  customDifficulty: string | null;
-} | null | undefined;
+type CoupleDateOverrides =
+  | {
+      customTitle: string | null;
+      customDescription: string | null;
+      customCategory: string | null;
+      customDifficulty: string | null;
+    }
+  | null
+  | undefined;
 
 export function resolveCatalogDate(idea: DateIdea, coupleDate?: CoupleDateOverrides) {
   const title = coupleDate?.customTitle ?? idea.title;

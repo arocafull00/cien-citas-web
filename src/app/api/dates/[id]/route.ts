@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { evaluateAfterDateCompleted } from '@/lib/achievements/evaluate';
 import { reconcileCoupleAchievements } from '@/lib/achievements/reconcile';
@@ -10,25 +10,30 @@ import {
 
 import { after } from 'next/server';
 import { isCustomDateId, parseCatalogDateId } from '@/lib/date-id';
-import {
-  normalizeCatalogOverride,
-  resolveCatalogDate,
-} from '@/lib/resolve-catalog-date';
+import { normalizeCatalogOverride, resolveCatalogDate } from '@/lib/resolve-catalog-date';
 import { DATE_CATEGORIES, type DateCategory, type DateDifficulty } from '@/constants/dates';
 import { db } from '@/db';
-import {
-  coupleDates,
-  customDateImages,
-  customDates,
-  dateIdeas,
-  dateImages,
-} from '@/db/schema';
+import { coupleDates, customDateImages, customDates, dateIdeas, dateImages } from '@/db/schema';
 import { deleteFromStorage } from '@/lib/r2-delete';
 import { eq, and, asc } from 'drizzle-orm';
 
 const DIFFICULTIES: DateDifficulty[] = ['fácil', 'medio', 'difícil'];
 
-function deferNewCompletionSideEffects(params: { coupleId: string; partnerId: string | null; userId: string; dateTitle: string; dateId: number }) { after(async () => { try { await evaluateAfterDateCompleted(params.coupleId); } catch (error) { console.error("[achievements] completion evaluation failed", error); } }); }
+function deferNewCompletionSideEffects(params: {
+  coupleId: string;
+  partnerId: string | null;
+  userId: string;
+  dateTitle: string;
+  dateId: number;
+}) {
+  after(async () => {
+    try {
+      await evaluateAfterDateCompleted(params.coupleId);
+    } catch (error) {
+      console.error('[achievements] completion evaluation failed', error);
+    }
+  });
+}
 
 type CustomizationBody = {
   customTitle?: string | null;
@@ -485,10 +490,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
   const { id } = await context.params;
   try {
     if (!isCustomDateId(id)) {
-      return Response.json(
-        { error: 'Solo se pueden eliminar citas propias' },
-        { status: 405 },
-      );
+      return Response.json({ error: 'Solo se pueden eliminar citas propias' }, { status: 405 });
     }
 
     const { userId } = await requireAuth(request);

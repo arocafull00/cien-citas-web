@@ -1,13 +1,13 @@
-import type { DateCategory } from "@/constants/dates";
+import type { DateCategory } from '@/constants/dates';
 
 export const CARD_ASPECT = 1;
 
 export const CARD_BACKGROUNDS = [
-  "/images/cards/1.png",
-  "/images/cards/2.png",
-  "/images/cards/3.png",
-  "/images/cards/4.png",
-  "/images/cards/5.png",
+  '/images/cards/1.png',
+  '/images/cards/2.png',
+  '/images/cards/3.png',
+  '/images/cards/4.png',
+  '/images/cards/5.png',
 ] as const;
 
 export type CategoryCardTheme = {
@@ -18,39 +18,39 @@ export type CategoryCardTheme = {
 
 export const CATEGORY_CARD_THEME: Record<DateCategory, CategoryCardTheme> = {
   Aventura: {
-    numberColor: "#B8847A",
-    pillBg: "rgba(196, 132, 122, 0.55)",
-    pillText: "#5C3D38",
+    numberColor: '#B8847A',
+    pillBg: 'rgba(196, 132, 122, 0.55)',
+    pillText: '#5C3D38',
   },
   Romántico: {
-    numberColor: "#B07A82",
-    pillBg: "rgba(188, 122, 132, 0.55)",
-    pillText: "#5C3840",
+    numberColor: '#B07A82',
+    pillBg: 'rgba(188, 122, 132, 0.55)',
+    pillText: '#5C3840',
   },
   Gastronomía: {
-    numberColor: "#C49A7A",
-    pillBg: "rgba(212, 168, 138, 0.55)",
-    pillText: "#5C4838",
+    numberColor: '#C49A7A',
+    pillBg: 'rgba(212, 168, 138, 0.55)',
+    pillText: '#5C4838',
   },
   Cultura: {
-    numberColor: "#6B8A72",
-    pillBg: "rgba(139, 168, 148, 0.55)",
-    pillText: "#2E4536",
+    numberColor: '#6B8A72',
+    pillBg: 'rgba(139, 168, 148, 0.55)',
+    pillText: '#2E4536',
   },
-  "En casa": {
-    numberColor: "#A89078",
-    pillBg: "rgba(196, 180, 160, 0.55)",
-    pillText: "#4A4038",
+  'En casa': {
+    numberColor: '#A89078',
+    pillBg: 'rgba(196, 180, 160, 0.55)',
+    pillText: '#4A4038',
   },
   Naturaleza: {
-    numberColor: "#8A9470",
-    pillBg: "rgba(168, 178, 138, 0.55)",
-    pillText: "#3A4230",
+    numberColor: '#8A9470',
+    pillBg: 'rgba(168, 178, 138, 0.55)',
+    pillText: '#3A4230',
   },
   Sorpresa: {
-    numberColor: "#9A8878",
-    pillBg: "rgba(180, 168, 152, 0.55)",
-    pillText: "#4A4438",
+    numberColor: '#9A8878',
+    pillBg: 'rgba(180, 168, 152, 0.55)',
+    pillText: '#4A4438',
   },
 };
 

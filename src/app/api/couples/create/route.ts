@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 import { requireAuth } from '@/lib/auth-middleware';
 import { db } from '@/db';
 import { couples, inviteCodes } from '@/db/schema';
@@ -42,9 +42,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Ya tienes una pareja vinculada' }, { status: 409 });
     }
 
-    await db
-      .delete(couples)
-      .where(and(eq(couples.user1Id, userId), isNull(couples.user2Id)));
+    await db.delete(couples).where(and(eq(couples.user1Id, userId), isNull(couples.user2Id)));
 
     for (let attempt = 0; attempt < 10; attempt += 1) {
       const code = generateInviteCode();
@@ -64,10 +62,7 @@ export async function POST(request: Request) {
       if (onCouple.length > 0) {
         continue;
       }
-      const [row] = await db
-        .insert(inviteCodes)
-        .values({ userId, code })
-        .returning();
+      const [row] = await db.insert(inviteCodes).values({ userId, code }).returning();
       return Response.json({ code: row.code }, { status: 201 });
     }
 

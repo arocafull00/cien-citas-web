@@ -1,13 +1,13 @@
 export type DateCategory =
-  | "Aventura"
-  | "Romántico"
-  | "Gastronomía"
-  | "Cultura"
-  | "En casa"
-  | "Naturaleza"
-  | "Sorpresa";
+  | 'Aventura'
+  | 'Romántico'
+  | 'Gastronomía'
+  | 'Cultura'
+  | 'En casa'
+  | 'Naturaleza'
+  | 'Sorpresa';
 
-export type DateDifficulty = "fácil" | "medio" | "difícil";
+export type DateDifficulty = 'fácil' | 'medio' | 'difícil';
 
 export type DateIdea = {
   id: number;
@@ -18,11 +18,11 @@ export type DateIdea = {
 };
 
 export const DATE_CATEGORIES: DateCategory[] = [
-  "Aventura",
-  "Romántico",
-  "Gastronomía",
-  "Cultura",
-  "En casa",
-  "Naturaleza",
-  "Sorpresa",
+  'Aventura',
+  'Romántico',
+  'Gastronomía',
+  'Cultura',
+  'En casa',
+  'Naturaleza',
+  'Sorpresa',
 ];

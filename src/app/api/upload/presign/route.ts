@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { db } from '@/db';
 import { coupleDates, customDates } from '@/db/schema';
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const { userId } = await requireAuth(request);
     const { coupleId } = await requireCouple(userId);
 
-    const { filename, contentType, coupleDateId, customDateId } = await request.json() as {
+    const { filename, contentType, coupleDateId, customDateId } = (await request.json()) as {
       filename: string;
       contentType: string;
       coupleDateId?: string;

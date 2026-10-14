@@ -10,18 +10,13 @@ export type CompletePatchPayload = {
   notes: string | null;
 };
 
-function matchesCompletedIntent(
-  detail: DateDetail,
-  payload: CompletePatchPayload,
-): boolean {
+function matchesCompletedIntent(detail: DateDetail, payload: CompletePatchPayload): boolean {
   if (!detail.completed) {
     return false;
   }
 
   const intentAt = new Date(payload.completedAt).getTime();
-  const savedAt = detail.completedAt
-    ? new Date(detail.completedAt).getTime()
-    : null;
+  const savedAt = detail.completedAt ? new Date(detail.completedAt).getTime() : null;
 
   if (savedAt == null) {
     return false;
@@ -76,9 +71,7 @@ export async function persistCompletedDate(
       throw e;
     }
 
-    const { date: detail } = await apiClient.get<{ date: DateDetail }>(
-      `/api/dates/${dateId}`,
-    );
+    const { date: detail } = await apiClient.get<{ date: DateDetail }>(`/api/dates/${dateId}`);
 
     if (!matchesCompletedIntent(detail, payload) || !detail.coupleDateId) {
       throw e;

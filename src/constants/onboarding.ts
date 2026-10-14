@@ -2,14 +2,14 @@ export type SlideImageSource = string;
 
 export type OnboardingSlide =
   | {
-      kind: "polaroid";
+      kind: 'polaroid';
       title: string;
       titleHighlight?: string;
       description: string;
       heroImage: SlideImageSource;
     }
   | {
-      kind: "bento";
+      kind: 'bento';
       title: string;
       description: string;
       mainImage: SlideImageSource;
@@ -18,7 +18,7 @@ export type OnboardingSlide =
       travelThumb: SlideImageSource;
     }
   | {
-      kind: "scrapbook";
+      kind: 'scrapbook';
       title: string;
       description: string;
       heroImage: SlideImageSource;
@@ -27,7 +27,7 @@ export type OnboardingSlide =
       memoryQuote: string;
     }
   | {
-      kind: "progress";
+      kind: 'progress';
       title: string;
       description: string;
       completed: number;
@@ -35,52 +35,48 @@ export type OnboardingSlide =
       doneCardImage: SlideImageSource;
     }
   | {
-      kind: "partners";
+      kind: 'partners';
       title: string;
       description: string;
     };
 
 export const ONBOARDING_SLIDES: OnboardingSlide[] = [
   {
-    kind: "polaroid",
-    title: "100 citas ",
-    titleHighlight: "antes de casarse",
-    description: "Empezad a vivir las 100 citas juntos.",
-    heroImage: "/images/onboarding/default.jpg",
+    kind: 'polaroid',
+    title: '100 citas ',
+    titleHighlight: 'antes de casarse',
+    description: 'Empezad a vivir las 100 citas juntos.',
+    heroImage: '/images/onboarding/default.jpg',
   },
   {
-    kind: "bento",
-    title: "Descubrid nuevas experiencias juntos",
-    description:
-      "Explorad citas románticas, aventuras, escapadas y planes especiales.",
-    mainImage: "/images/onboarding/food.png",
-    adventureImage: "/images/onboarding/landscape.png",
-    spaThumb: "/images/onboarding/spa.png",
-    travelThumb: "/images/onboarding/plane.png",
+    kind: 'bento',
+    title: 'Descubrid nuevas experiencias juntos',
+    description: 'Explorad citas románticas, aventuras, escapadas y planes especiales.',
+    mainImage: '/images/onboarding/food.png',
+    adventureImage: '/images/onboarding/landscape.png',
+    spaThumb: '/images/onboarding/spa.png',
+    travelThumb: '/images/onboarding/plane.png',
   },
   {
-    kind: "scrapbook",
-    title: "Convertid cada cita en un recuerdo",
-    description:
-      "Guardad fotos, fechas y pequeños momentos para construir vuestra historia.",
-    heroImage: "/images/onboarding/river.png",
-    peekImage: "/images/onboarding/golf.png",
-    memoryDate: "11 de Septiembre, 2022",
-    memoryQuote:
-      '"De cuando fuimos a Benidorm a ver Mundomar y a Aqualandia. Que recuerdos! 💕"',
+    kind: 'scrapbook',
+    title: 'Convertid cada cita en un recuerdo',
+    description: 'Guardad fotos, fechas y pequeños momentos para construir vuestra historia.',
+    heroImage: '/images/onboarding/river.png',
+    peekImage: '/images/onboarding/golf.png',
+    memoryDate: '11 de Septiembre, 2022',
+    memoryQuote: '"De cuando fuimos a Benidorm a ver Mundomar y a Aqualandia. Que recuerdos! 💕"',
   },
   {
-    kind: "progress",
-    title: "Vivid vuestra historia paso a paso",
-    description:
-      "Completad las 100 citas y cread recuerdos únicos antes del gran día.",
+    kind: 'progress',
+    title: 'Vivid vuestra historia paso a paso',
+    description: 'Completad las 100 citas y cread recuerdos únicos antes del gran día.',
     completed: 24,
     total: 100,
-    doneCardImage: "/images/onboarding/beach.png",
+    doneCardImage: '/images/onboarding/beach.png',
   },
   {
-    kind: "partners",
-    title: "Inicia sesión",
-    description: "Conecta tu cuenta y comienza a vivir las 100 citas juntos.",
+    kind: 'partners',
+    title: 'Inicia sesión',
+    description: 'Conecta tu cuenta y comienza a vivir las 100 citas juntos.',
   },
 ];

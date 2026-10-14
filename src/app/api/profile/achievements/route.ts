@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { db } from '@/db';
 import { achievements, coupleAchievements } from '@/db/schema';

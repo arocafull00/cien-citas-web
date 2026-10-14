@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { handleApiError } from '@/lib/db-errors';
 import { db } from '@/db';
@@ -11,17 +11,9 @@ export async function GET(request: Request) {
     const { userId } = await requireAuth(request);
     const { coupleId, partnerId } = await requireCouple(userId);
 
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
-    const [coupleRow] = await db
-      .select()
-      .from(couples)
-      .where(eq(couples.id, coupleId))
-      .limit(1);
+    const [coupleRow] = await db.select().from(couples).where(eq(couples.id, coupleId)).limit(1);
 
     let partnerName: string | null = null;
     let partnerAvatarUrl: string | null = null;
@@ -36,17 +28,28 @@ export async function GET(request: Request) {
     }
 
     const [catalogCompleted, customCompleted] = await Promise.all([
-      db.select({ category: sql<string>`coalesce(${coupleDates.customCategory}, ${dateIdeas.category})`, completedAt: coupleDates.completedAt })
-        .from(coupleDates).innerJoin(dateIdeas, eq(coupleDates.dateId, dateIdeas.id))
+      db
+        .select({
+          category: sql<string>`coalesce(${coupleDates.customCategory}, ${dateIdeas.category})`,
+          completedAt: coupleDates.completedAt,
+        })
+        .from(coupleDates)
+        .innerJoin(dateIdeas, eq(coupleDates.dateId, dateIdeas.id))
         .where(and(eq(coupleDates.coupleId, coupleId), eq(coupleDates.completed, true))),
-      db.select({ category: customDates.category, completedAt: customDates.completedAt })
-        .from(customDates).where(and(eq(customDates.coupleId, coupleId), eq(customDates.completed, true))),
+      db
+        .select({ category: customDates.category, completedAt: customDates.completedAt })
+        .from(customDates)
+        .where(and(eq(customDates.coupleId, coupleId), eq(customDates.completed, true))),
     ]);
     const completed = [...catalogCompleted, ...customCompleted];
     const totalCompleted = completed.length;
-    const categoriesCompleted = new Set(completed.map(date => date.category)).size;
-    const timestamps = completed.flatMap(date => date.completedAt ? [date.completedAt.getTime()] : []);
-    const daysActive = timestamps.length ? Math.max(0, Math.floor((Date.now() - Math.min(...timestamps)) / 86_400_000)) : 0;
+    const categoriesCompleted = new Set(completed.map((date) => date.category)).size;
+    const timestamps = completed.flatMap((date) =>
+      date.completedAt ? [date.completedAt.getTime()] : [],
+    );
+    const daysActive = timestamps.length
+      ? Math.max(0, Math.floor((Date.now() - Math.min(...timestamps)) / 86_400_000))
+      : 0;
 
     return Response.json({
       user: {
@@ -88,7 +91,8 @@ export async function PATCH(request: Request) {
     } = {};
 
     if (body.name !== undefined) {
-      if (typeof body.name !== 'string' || body.name.trim().length > 80) return Response.json({ error: 'Nombre inválido' }, { status: 400 });
+      if (typeof body.name !== 'string' || body.name.trim().length > 80)
+        return Response.json({ error: 'Nombre inválido' }, { status: 400 });
       const trimmed = body.name.trim();
       if (!trimmed) {
         return Response.json({ error: 'El nombre no puede estar vacío' }, { status: 400 });
@@ -97,7 +101,13 @@ export async function PATCH(request: Request) {
     }
 
     if (body.avatarUrl !== undefined) {
-      if (typeof body.avatarUrl !== 'string' || !storageKey(body.avatarUrl, process.env.R2_PUBLIC_URL || '')?.startsWith(`avatars/${userId}/`)) return Response.json({ error: 'URL de avatar inválida' }, { status: 400 });
+      if (
+        typeof body.avatarUrl !== 'string' ||
+        !storageKey(body.avatarUrl, process.env.R2_PUBLIC_URL || '')?.startsWith(
+          `avatars/${userId}/`,
+        )
+      )
+        return Response.json({ error: 'URL de avatar inválida' }, { status: 400 });
       const trimmed = body.avatarUrl.trim();
       if (!trimmed) {
         return Response.json({ error: 'URL de avatar inválida' }, { status: 400 });
@@ -106,7 +116,8 @@ export async function PATCH(request: Request) {
     }
 
     if (body.notifyPartnerActivity !== undefined) {
-      if (typeof body.notifyPartnerActivity !== 'boolean') return Response.json({ error: 'Preferencia inválida' }, { status: 400 });
+      if (typeof body.notifyPartnerActivity !== 'boolean')
+        return Response.json({ error: 'Preferencia inválida' }, { status: 400 });
       patch.notifyPartnerActivity = body.notifyPartnerActivity;
     }
 

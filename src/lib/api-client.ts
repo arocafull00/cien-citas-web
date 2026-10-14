@@ -1,11 +1,23 @@
 export class ApiError extends Error {
-  constructor(message: string, public status: number) { super(message); this.name = 'ApiError'; }
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
 }
 export class NetworkError extends Error {
-  constructor() { super('No se pudo conectar con el servidor'); this.name = 'NetworkError'; }
+  constructor() {
+    super('No se pudo conectar con el servidor');
+    this.name = 'NetworkError';
+  }
 }
 export function isNetworkError(error: unknown) {
-  return error instanceof NetworkError || (error instanceof TypeError && /fetch|network/i.test(error.message));
+  return (
+    error instanceof NetworkError ||
+    (error instanceof TypeError && /fetch|network/i.test(error.message))
+  );
 }
 const CACHE_TTL = 60_000;
 const cachedReads = new Map<string, { value: unknown; expiresAt: number }>();
@@ -19,21 +31,28 @@ export function clearApiCache() {
   pendingReads.clear();
 }
 function cacheable(path: string) {
-  return typeof window !== 'undefined' && /^\/api\/(account|couples\/me|dates(?:\/[^/?]+)?|profile\/(?:me|achievements))$/.test(path);
+  return (
+    typeof window !== 'undefined' &&
+    /^\/api\/(account|couples\/me|dates(?:\/[^/?]+)?|profile\/(?:me|achievements))$/.test(path)
+  );
 }
 function get<T>(path: string, options?: { fresh?: boolean }): Promise<T> {
   if (!cacheable(path)) return request<T>('GET', path);
   const cached = cachedReads.get(path);
-  if (!options?.fresh && cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.value as T);
+  if (!options?.fresh && cached && cached.expiresAt > Date.now())
+    return Promise.resolve(cached.value as T);
   const pending = pendingReads.get(path);
   if (pending) return pending as Promise<T>;
   const generation = cacheGeneration;
-  const promise = request<T>('GET', path).then(value => {
-    if (generation === cacheGeneration) cachedReads.set(path, { value, expiresAt: Date.now() + CACHE_TTL });
-    return value;
-  }).finally(() => {
-    if (pendingReads.get(path) === promise) pendingReads.delete(path);
-  });
+  const promise = request<T>('GET', path)
+    .then((value) => {
+      if (generation === cacheGeneration)
+        cachedReads.set(path, { value, expiresAt: Date.now() + CACHE_TTL });
+      return value;
+    })
+    .finally(() => {
+      if (pendingReads.get(path) === promise) pendingReads.delete(path);
+    });
   pendingReads.set(path, promise);
   return promise;
 }
@@ -46,11 +65,15 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   let res: Response;
   try {
     res = await fetch(path, {
-      method, credentials: 'same-origin', cache: 'no-store',
+      method,
+      credentials: 'same-origin',
+      cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-  } catch { throw new NetworkError(); }
+  } catch {
+    throw new NetworkError();
+  }
   if (!res.ok) {
     if ([401, 403].includes(res.status)) clearApiCache();
     const error = await res.json().catch(() => ({ error: 'No se pudo completar la operación' }));

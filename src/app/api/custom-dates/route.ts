@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { DATE_CATEGORIES, type DateCategory, type DateDifficulty } from '@/constants/dates';
 import { db } from '@/db';

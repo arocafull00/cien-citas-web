@@ -12,11 +12,16 @@ beforeEach(() => {
   clearApiCache();
   fetchMock.mockReset();
 });
-afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe('caché privada de navegación', () => {
   it('reutiliza el detalle y el perfil durante un minuto y después vuelve a pedirlos', async () => {
-    fetchMock.mockImplementation(async () => Response.json({ version: fetchMock.mock.calls.length }));
+    fetchMock.mockImplementation(async () =>
+      Response.json({ version: fetchMock.mock.calls.length }),
+    );
     for (const path of ['/api/dates/1', '/api/profile/me', '/api/profile/achievements']) {
       const first = await apiClient.get(path);
       expect(await apiClient.get(path)).toEqual(first);
@@ -27,22 +32,29 @@ describe('caché privada de navegación', () => {
   });
 
   it('comparte peticiones simultáneas y permite actualizar explícitamente', async () => {
-    fetchMock.mockImplementation(async () => Response.json({ version: fetchMock.mock.calls.length }));
+    fetchMock.mockImplementation(async () =>
+      Response.json({ version: fetchMock.mock.calls.length }),
+    );
     const values = await Promise.all([apiClient.get('/api/dates'), apiClient.get('/api/dates')]);
     expect(values).toEqual([{ version: 1 }, { version: 1 }]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(await apiClient.get('/api/dates', { fresh: true })).toEqual({ version: 2 });
   });
 
-  it.each(['patch', 'post', 'delete'] as const)('invalida las lecturas tras %s para mostrar los cambios al navegar', async method => {
-    fetchMock.mockImplementation(async () => Response.json({ version: fetchMock.mock.calls.length }));
-    await apiClient.get('/api/dates/1');
-    await apiClient.get('/api/profile/achievements');
-    if (method === 'delete') await apiClient.delete('/api/upload/image-1');
-    else await apiClient[method]('/api/dates/1', { completed: true });
-    expect(await apiClient.get('/api/dates/1')).toEqual({ version: 4 });
-    expect(await apiClient.get('/api/profile/achievements')).toEqual({ version: 5 });
-  });
+  it.each(['patch', 'post', 'delete'] as const)(
+    'invalida las lecturas tras %s para mostrar los cambios al navegar',
+    async (method) => {
+      fetchMock.mockImplementation(async () =>
+        Response.json({ version: fetchMock.mock.calls.length }),
+      );
+      await apiClient.get('/api/dates/1');
+      await apiClient.get('/api/profile/achievements');
+      if (method === 'delete') await apiClient.delete('/api/upload/image-1');
+      else await apiClient[method]('/api/dates/1', { completed: true });
+      expect(await apiClient.get('/api/dates/1')).toEqual({ version: 4 });
+      expect(await apiClient.get('/api/profile/achievements')).toEqual({ version: 5 });
+    },
+  );
 
   it('no usa datos antiguos al verificar un guardado cuya respuesta se perdió', async () => {
     fetchMock.mockResolvedValueOnce(Response.json({ completed: false }));
@@ -54,7 +66,9 @@ describe('caché privada de navegación', () => {
   });
 
   it('descarta la caché al cambiar de usuario o pareja y al borrar los recuerdos', async () => {
-    fetchMock.mockImplementation(async () => Response.json({ version: fetchMock.mock.calls.length }));
+    fetchMock.mockImplementation(async () =>
+      Response.json({ version: fetchMock.mock.calls.length }),
+    );
     await apiClient.get('/api/dates/1');
     beginContext();
     expect(await apiClient.get('/api/dates/1')).toEqual({ version: 2 });
@@ -67,7 +81,12 @@ describe('caché privada de navegación', () => {
 
   it('una respuesta de una sesión anterior no repuebla la caché de la nueva', async () => {
     let finish!: (response: Response) => void;
-    fetchMock.mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve; }));
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          finish = resolve;
+        }),
+    );
     const previous = apiClient.get('/api/dates/1');
     beginContext();
     fetchMock.mockResolvedValueOnce(Response.json({ owner: 'new' }));
@@ -92,9 +111,11 @@ describe('caché privada de navegación', () => {
   it('no comparte datos entre peticiones del servidor ni cachea búsquedas de lugares', async () => {
     fetchMock.mockImplementation(async () => Response.json({}));
     vi.stubGlobal('window', undefined);
-    await apiClient.get('/api/dates'); await apiClient.get('/api/dates');
+    await apiClient.get('/api/dates');
+    await apiClient.get('/api/dates');
     vi.stubGlobal('window', {});
-    await apiClient.get('/api/places?q=Turia'); await apiClient.get('/api/places?q=Turia');
+    await apiClient.get('/api/places?q=Turia');
+    await apiClient.get('/api/places?q=Turia');
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });

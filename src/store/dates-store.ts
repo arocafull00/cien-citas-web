@@ -1,5 +1,3 @@
-
-
 import type { DateCategory } from '@/constants/dates';
 
 export type DateFilter = {
@@ -45,4 +43,3 @@ export type DateDetail = {
   coupleDateId: string | null;
   images: { id: string; url: string }[];
 };
-

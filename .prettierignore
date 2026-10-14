@@ -1,0 +1,10 @@
+node_modules
+.next
+public
+drizzle
+r2-backup
+test-results
+playwright-report
+pnpm-lock.yaml
+*.tsbuildinfo
+next-env.d.ts

@@ -1,2 +1,4 @@
 import { FeedScreen } from '@/components/feed-screen';
-export default function DatesPage() { return <FeedScreen />; }
+export default function DatesPage() {
+  return <FeedScreen />;
+}
