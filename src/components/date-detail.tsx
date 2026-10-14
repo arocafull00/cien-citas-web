@@ -1,7 +1,7 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { CalendarDays, MapPin, Heart, Pencil } from 'lucide-react';
+import { CalendarDays, MapPin, Heart, Pencil, Images } from 'lucide-react';
 import { getCardBackground } from '@/constants/date-card';
 import type { DateDetail } from '@/lib/types';
 import { handleDateNavigation, type DateNavigation } from '@/lib/date-navigation';
@@ -66,6 +66,20 @@ export function DateDetailView({
             fallback={getCardBackground(date.id)}
           />
           <div className="hero-shade" />
+          {date.images.length ? (
+            <>
+              <button
+                type="button"
+                className="hero-open"
+                aria-label={`Ver las ${date.images.length} fotos`}
+                onClick={() => setPhoto(0)}
+              />
+              <span className="hero-count">
+                <Images size={14} />
+                {date.images.length}
+              </span>
+            </>
+          ) : null}
           <span className="hero-number">
             {date.isCustom ? 'Vuestra' : date.id.padStart(2, '0')}
           </span>
@@ -178,6 +192,7 @@ export function DateDetailView({
           images={date.images}
           index={photo}
           scope={scope}
+          title={date.title}
           close={() => setPhoto(null)}
         />
       ) : null}

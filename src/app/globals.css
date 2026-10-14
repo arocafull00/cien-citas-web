@@ -964,52 +964,211 @@ select:focus-visible {
   border-top: 1px solid var(--border);
   z-index: 30;
 }
-.photo-dialog {
-  border: 0;
-  background: #171311;
-  color: #fffdf9;
-  max-width: 480px;
-  width: 100%;
-  height: 100dvh;
-  max-height: 100dvh;
-  padding: 18px;
+html:has(.photo-dialog[open]) {
   overflow: hidden;
 }
+.photo-dialog {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
+  animation: viewer-in 0.22s ease-out;
+}
 .photo-dialog::backdrop {
-  background: #171311;
+  background: transparent;
+}
+.viewer-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+.viewer-track::-webkit-scrollbar {
+  display: none;
+}
+.viewer-slide {
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.viewer-slide img,
+.viewer-slide .image-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.viewer-slide .image-placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #ffffff99;
+  font-size: 14px;
 }
 .viewer-top,
-.viewer-controls {
-  display: flex;
+.viewer-strip,
+.viewer-arrow {
+  transition: opacity 0.2s ease;
+}
+.photo-dialog[data-chrome='hidden'] :is(.viewer-top, .viewer-strip, .viewer-arrow) {
+  opacity: 0;
+  pointer-events: none;
+}
+.viewer-top {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
   align-items: center;
-  justify-content: space-between;
-  padding: env(safe-area-inset-top) 0 16px;
+  padding: calc(8px + env(safe-area-inset-top)) 8px 28px;
+  background: linear-gradient(#000000b3, transparent);
+}
+.viewer-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  text-align: center;
+  line-height: 1.25;
+}
+.viewer-title strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.viewer-title span {
+  max-width: 100%;
+  font-size: 12px;
+  color: #ffffffb3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .viewer-top button,
-.viewer-controls button {
-  color: #fffdf9;
-  background: none;
+.viewer-arrow {
+  color: #fff;
   border: 0;
-  min-height: 44px;
-  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
-.viewer-image {
-  height: calc(100dvh - 170px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.viewer-top button {
+  background: none;
 }
-.viewer-image img {
-  height: 100%;
+.viewer-arrow {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 2;
+  background: #ffffff26;
+  backdrop-filter: blur(8px);
+}
+.viewer-arrow:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+.viewer-prev {
+  left: 12px;
+}
+.viewer-next {
+  right: 12px;
+}
+@media (pointer: coarse) {
+  .viewer-arrow {
+    display: none;
+  }
+}
+.viewer-strip {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 28px 50% calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, #000000b3);
+}
+.viewer-strip::-webkit-scrollbar {
+  display: none;
+}
+.viewer-strip button {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #ffffff1a;
+  opacity: 0.55;
+  transition:
+    opacity 0.2s ease,
+    width 0.2s ease;
+}
+.viewer-strip button[aria-current='true'] {
+  width: 56px;
+  opacity: 1;
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+.viewer-strip img,
+.viewer-strip .image-placeholder {
   width: 100%;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
 }
-.viewer-controls {
+@keyframes viewer-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+.hero-open {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.hero-count {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #00000059;
+  backdrop-filter: blur(6px);
+  color: #fffdf9;
   font-size: 12px;
-  color: #fffdf9aa;
+  font-weight: 600;
+  pointer-events: none;
 }
 .confirm-dialog {
   width: calc(100% - 36px);
