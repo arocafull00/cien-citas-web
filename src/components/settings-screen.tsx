@@ -24,9 +24,7 @@ export function SettingsScreen() {
             <span>Código de invitación</span>
             <strong>{couple?.inviteCode}</strong>
             <Button
-              variant="ghost"
-              size="unstyled"
-              className="icon-button"
+              variant="icon"
               aria-label="Copiar código de invitación"
               onClick={() =>
                 void navigator.clipboard
@@ -39,8 +37,7 @@ export function SettingsScreen() {
             </Button>
           </div>
           <Button
-            variant="ghost"
-            size="unstyled"
+            variant="plain"
             className="settings-row danger"
             disabled={!online}
             onClick={() => setConfirm('unlink')}
@@ -64,12 +61,7 @@ export function SettingsScreen() {
             Los recuerdos consultados y las fotos vistas se guardan para leerlos sin conexión. Para
             editar necesitas internet.
           </p>
-          <Button
-            variant="ghost"
-            size="unstyled"
-            className="settings-row"
-            onClick={() => setConfirm('cache')}
-          >
+          <Button variant="plain" className="settings-row" onClick={() => setConfirm('cache')}>
             <span>
               <Trash2 size={19} />
               Borrar recuerdos de este dispositivo
@@ -77,8 +69,7 @@ export function SettingsScreen() {
           </Button>
         </section>
         <Button
-          variant="ghost"
-          size="unstyled"
+          variant="plain"
           className="settings-row danger"
           onClick={() => setConfirm('logout')}
         >

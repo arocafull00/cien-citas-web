@@ -4,18 +4,18 @@ import { PwaControls } from '@/components/pwa-controls';
 import './globals.css';
 const lora = localFont({
   src: [
-    { path: '../../public/fonts/Lora/static/Lora-Regular.ttf', weight: '400' },
-    { path: '../../public/fonts/Lora/static/Lora-SemiBold.ttf', weight: '600' },
-    { path: '../../public/fonts/Lora/static/Lora-Bold.ttf', weight: '700' },
-    { path: '../../public/fonts/Lora/static/Lora-Italic.ttf', weight: '400', style: 'italic' },
+    { path: '../../public/fonts/Lora/static/Lora-Regular.woff2', weight: '400' },
+    { path: '../../public/fonts/Lora/static/Lora-SemiBold.woff2', weight: '600' },
+    { path: '../../public/fonts/Lora/static/Lora-Bold.woff2', weight: '700' },
+    { path: '../../public/fonts/Lora/static/Lora-Italic.woff2', weight: '400', style: 'italic' },
   ],
   variable: '--font-lora',
   display: 'swap',
 });
 const sans = localFont({
   src: [
-    { path: '../../public/fonts/SourceSans3-Regular.ttf', weight: '400' },
-    { path: '../../public/fonts/SourceSans3-SemiBold.ttf', weight: '600' },
+    { path: '../../public/fonts/SourceSans3-Regular.woff2', weight: '400' },
+    { path: '../../public/fonts/SourceSans3-SemiBold.woff2', weight: '600' },
   ],
   variable: '--font-sans',
   display: 'swap',

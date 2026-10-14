@@ -28,8 +28,13 @@ Referencia: código actual de `D:\cien-citas-app`. Proyecto conservado: `cien-ci
 - Iconos de los logros, avatar de la pareja y contador real de categorías en el perfil. Las estadísticas incluyen citas propias y categorías personalizadas.
 - Botones, campos, áreas de texto, badges, progreso y confirmaciones con shadcn; Tailwind también se compila para el documento offline.
 
+- Subidas validadas en el servidor: tipo y tamaño firmados en la URL de R2 y máximo de diez fotos por cita.
+- Fotos redimensionadas a 2048 px en el navegador antes de subirlas; las miniaturas se generan una vez y se guardan en R2 junto al original (`<clave>.thumb.webp`).
+- Al borrar fotos o citas se borra primero la base de datos y después R2, en segundo plano. Se elimina el avatar anterior al sustituirlo.
+- Imágenes de bienvenida en WebP y fuentes en WOFF2.
+
 No se incluyen notificaciones. Las migraciones y la base de datos compartida no se han modificado.
 
 ## Límites de verificación
 
-Se revisan fuentes, tipos, lint y compilación. No se crean ni se ejecutan tests. El login real con Google, las subidas a R2, la recepción de datos desde otra cuenta, la PWA instalada en el dispositivo y la fluidez/FPS requieren comprobación real; la compilación no los demuestra.
+Se revisan formato, tipos, lint, tests unitarios (Vitest), tests de navegador (Playwright) y compilación. El login real con Google, las subidas a R2, la recepción de datos desde otra cuenta, la PWA instalada en el dispositivo y la fluidez/FPS requieren comprobación real; la compilación no los demuestra.

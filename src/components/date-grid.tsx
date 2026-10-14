@@ -174,8 +174,7 @@ export const DateGrid = memo(function DateGrid({
             <Button
               key={value}
               type="button"
-              variant="ghost"
-              size="unstyled"
+              variant="plain"
               aria-pressed={filter === value}
               className={filter === value ? 'active' : ''}
               onClick={() => setFilter(value)}
@@ -197,6 +196,12 @@ export const DateGrid = memo(function DateGrid({
             void update();
         }}
       >
+        {refreshing ? (
+          <p className="refresh-indicator" role="status">
+            <span className="spinner" />
+            Actualizando vuestras citas…
+          </p>
+        ) : null}
         <DateResults
           dates={dates}
           filter={filter}
@@ -206,9 +211,8 @@ export const DateGrid = memo(function DateGrid({
           navigate={navigate}
         />
         <Button
-          variant="ghost"
-          size="unstyled"
-          className="text-button reset-date-filters"
+          variant="text"
+          className="reset-date-filters"
           onClick={() => setPreferences({ query: '', filter: 'Todas' })}
           hidden={filter === 'Todas' && !query}
         >

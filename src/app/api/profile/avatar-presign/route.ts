@@ -1,55 +1,30 @@
 export const runtime = 'nodejs';
 import { requireAuth } from '@/lib/auth-middleware';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-
-function getS3Client(): S3Client {
-  return new S3Client({
-    region: 'auto',
-    // The browser supplies the body later; do not sign a checksum of an empty file.
-    requestChecksumCalculation: 'WHEN_REQUIRED',
-    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-    },
-  });
-}
+import { handleApiError } from '@/lib/db-errors';
+import { isImageContentType, isValidImageSize } from '@/lib/image-rules';
+import { presignImageUpload, uploadKey } from '@/lib/r2';
+import { readJsonObject } from '@/lib/request-body';
 
 export async function POST(request: Request) {
   try {
     const { userId } = await requireAuth(request);
-
-    const { filename, contentType } = (await request.json()) as {
-      filename: string;
-      contentType: string;
-    };
-
-    if (!filename || !contentType) {
+    const { filename, contentType, size } = await readJsonObject(request);
+    if (typeof filename !== 'string' || !filename) {
       return Response.json(
-        { error: 'Parámetros requeridos: filename, contentType' },
+        { error: 'Parámetros requeridos: filename, contentType, size' },
         { status: 400 },
       );
     }
-
-    const timestamp = Date.now();
-    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const key = `avatars/${userId}/${timestamp}-${safeFilename}`;
-
-    const s3 = getS3Client();
-    const command = new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME,
-      Key: key,
-      ContentType: contentType,
-    });
-
-    const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
-    const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
-
-    return Response.json({ presignedUrl, publicUrl, key });
-  } catch (e) {
-    if (e instanceof Response) return e;
-    console.error(e);
-    return Response.json({ error: 'Error interno' }, { status: 500 });
+    if (!isImageContentType(contentType)) {
+      return Response.json({ error: 'Elige una foto JPG, PNG, WebP o HEIC.' }, { status: 400 });
+    }
+    if (!isValidImageSize(size)) {
+      return Response.json({ error: 'Cada foto puede ocupar hasta 15 MB.' }, { status: 400 });
+    }
+    return Response.json(
+      await presignImageUpload(uploadKey(`avatars/${userId}`, filename), contentType, size),
+    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }

@@ -68,6 +68,6 @@ pnpm typecheck
 pnpm build
 ```
 
-La revisión actual utiliza TypeScript, ESLint y la compilación de producción. No se crean ni se ejecutan tests. El alcance funcional y los límites de verificación están en [docs/functional-review.md](docs/functional-review.md).
+La revisión actual utiliza TypeScript, ESLint, Prettier (`pnpm format:check`), los tests unitarios (`pnpm test`), los de navegador (`pnpm test:e2e`) y la compilación de producción. El alcance funcional y los límites de verificación están en [docs/functional-review.md](docs/functional-review.md).
 
 `node scripts/verify-services.mjs` permite repetir las comprobaciones de conectividad de solo lectura sin imprimir credenciales.

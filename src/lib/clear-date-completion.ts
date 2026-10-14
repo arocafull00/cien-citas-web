@@ -1,32 +1,21 @@
 import { db } from '@/db';
 import { customDateImages, dateImages } from '@/db/schema';
-import { deleteFromStorage } from '@/lib/r2-delete';
 import { eq } from 'drizzle-orm';
 
 export async function clearCatalogDateCompletion(coupleDateId: string) {
-  const imgRows = await db
-    .select({ url: dateImages.url })
-    .from(dateImages)
-    .where(eq(dateImages.coupleDateId, coupleDateId));
-
-  for (const img of imgRows) {
-    await deleteFromStorage(img.url);
-  }
-
-  await db.delete(dateImages).where(eq(dateImages.coupleDateId, coupleDateId));
+  const rows = await db
+    .delete(dateImages)
+    .where(eq(dateImages.coupleDateId, coupleDateId))
+    .returning({ url: dateImages.url });
+  return rows.map((row) => row.url);
 }
 
 export async function clearCustomDateCompletion(customDateId: string) {
-  const imgRows = await db
-    .select({ url: customDateImages.url })
-    .from(customDateImages)
-    .where(eq(customDateImages.customDateId, customDateId));
-
-  for (const img of imgRows) {
-    await deleteFromStorage(img.url);
-  }
-
-  await db.delete(customDateImages).where(eq(customDateImages.customDateId, customDateId));
+  const rows = await db
+    .delete(customDateImages)
+    .where(eq(customDateImages.customDateId, customDateId))
+    .returning({ url: customDateImages.url });
+  return rows.map((row) => row.url);
 }
 
 export const COMPLETION_RESET_FIELDS = {

@@ -38,7 +38,7 @@ export default function Celebration() {
         Cada momento vivido juntos es una página más de vuestra historia. Que lo mejor siempre esté
         por venir.
       </p>
-      <Button variant="ghost" size="unstyled" className="button" onClick={() => void share()}>
+      <Button variant="primary" onClick={() => void share()}>
         <Share2 size={18} />
         Compartir
       </Button>

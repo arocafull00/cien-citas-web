@@ -66,6 +66,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const snapshot = useRef<Snapshot | null>(null);
   const identity = useRef<string | null | undefined>(undefined);
   const requestEpoch = useRef(0);
+  const lastRefreshAt = useRef(0);
 
   const reset = useCallback(async () => {
     ++requestEpoch.current;
@@ -89,9 +90,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const epoch = ++requestEpoch.current;
+    lastRefreshAt.current = Date.now();
     let gen = currentGeneration();
     let verifiedCouple: Couple | undefined;
     setError(null);
+    const fetchDates = () =>
+      apiClient.get<{ dates: DateEntry[] }>('/api/dates', { fresh: true }).then(
+        (value) => ({ value }),
+        (error: unknown) => ({ error }),
+      );
+    const earlyDates = snapshot.current?.couple.partner ? fetchDates() : null;
     try {
       const [accountResult, coupleResult] = await Promise.all([
         apiClient.get<{ account: Account }>('/api/account', { fresh: true }),
@@ -127,7 +135,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       setAccount(accountResult.account);
       setCouple(coupleResult.couple);
-      const list = await apiClient.get<{ dates: DateEntry[] }>('/api/dates', { fresh: true });
+      const listResult = await (earlyDates ?? fetchDates());
+      if ('error' in listResult) throw listResult.error;
+      const list = listResult.value;
       if (epoch !== requestEpoch.current) return;
       const next: Snapshot = {
         account: accountResult.account,
@@ -231,12 +241,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!online || !userId) return;
     const focus = () => {
-      if (document.visibilityState === 'visible') void refresh();
+      if (document.visibilityState === 'visible' && Date.now() - lastRefreshAt.current > 30_000)
+        void refresh();
     };
-    window.addEventListener('online', focus);
+    const reconnect = () => void refresh();
+    window.addEventListener('online', reconnect);
     document.addEventListener('visibilitychange', focus);
     return () => {
-      window.removeEventListener('online', focus);
+      window.removeEventListener('online', reconnect);
       document.removeEventListener('visibilitychange', focus);
     };
   }, [online, userId, refresh]);

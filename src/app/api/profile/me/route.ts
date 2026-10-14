@@ -5,6 +5,9 @@ import { db } from '@/db';
 import { users, couples, coupleDates, customDates, dateIdeas } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { storageKey } from '@/lib/storage-key';
+import { after } from 'next/server';
+import { deleteImages, keyFromUrl } from '@/lib/r2';
+import { readJsonObject } from '@/lib/request-body';
 
 export async function GET(request: Request) {
   try {
@@ -79,7 +82,7 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const { userId } = await requireAuth(request);
-    const body = (await request.json()) as {
+    const body = (await readJsonObject(request)) as {
       name?: string;
       avatarUrl?: string;
       notifyPartnerActivity?: boolean;
@@ -125,7 +128,18 @@ export async function PATCH(request: Request) {
       return Response.json({ error: 'Nada que actualizar' }, { status: 400 });
     }
 
+    const [previous] = patch.avatarUrl
+      ? await db.select({ avatarUrl: users.avatarUrl }).from(users).where(eq(users.id, userId))
+      : [];
     await db.update(users).set(patch).where(eq(users.id, userId));
+    const replaced = previous?.avatarUrl;
+    if (
+      replaced &&
+      replaced !== patch.avatarUrl &&
+      keyFromUrl(replaced)?.startsWith(`avatars/${userId}/`)
+    ) {
+      after(() => deleteImages([replaced]).catch((error) => console.error(error)));
+    }
 
     return Response.json({ ok: true });
   } catch (e) {

@@ -7,6 +7,7 @@ export function CachedImage({
   scope,
   className = '',
   variant = 'original',
+  fallback,
   ...props
 }: {
   src: string;
@@ -15,13 +16,17 @@ export function CachedImage({
   className?: string;
   loading?: 'lazy' | 'eager';
   variant?: 'original' | 'thumbnail';
+  fallback?: string;
 }) {
   const [result, setResult] = useState<{
     source: string;
     blob: string | null;
     failed: boolean;
   } | null>(null);
-  const container = useRef<HTMLSpanElement>(null);
+  const container = useRef<HTMLElement | null>(null);
+  const setContainer = (element: HTMLElement | null) => {
+    container.current = element;
+  };
   const source = `${scope || ''}:${variant}:${src}`;
   const local = src.startsWith('/') || !scope || /^https:\/\/[^/]*clerk\.(com|dev)\//.test(src);
   useEffect(() => {
@@ -58,16 +63,29 @@ export function CachedImage({
     };
   }, [src, source, scope, local, props.loading, variant]);
   if (local) return <img decoding="async" src={src} alt={alt} className={className} {...props} />;
-  if (!result || result.source !== source || !result.blob)
+  if (!result || result.source !== source || !result.blob) {
+    const failed = Boolean(result?.failed && result.source === source);
+    if (fallback)
+      return (
+        <img
+          ref={setContainer}
+          decoding="async"
+          src={fallback}
+          alt={alt}
+          className={className}
+          {...props}
+        />
+      );
     return (
       <span
-        ref={container}
+        ref={setContainer}
         role="img"
         aria-label={alt}
-        className={`image-placeholder ${className}`}
+        className={`image-placeholder ${failed ? '' : 'loading'} ${className}`}
       >
-        {result?.failed ? 'Foto no disponible' : 'Cargando foto…'}
+        {failed ? 'Foto no disponible' : null}
       </span>
     );
+  }
   return <img decoding="async" src={result.blob} alt={alt} className={className} {...props} />;
 }

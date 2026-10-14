@@ -12,9 +12,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "assets:cards": "node scripts/optimize-card-images.mjs",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "assets:images": "node scripts/optimize-images.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1048.0",

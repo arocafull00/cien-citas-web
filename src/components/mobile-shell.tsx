@@ -71,7 +71,7 @@ export function ConnectionNotice() {
         ) : null}
       </span>
       {online ? (
-        <Button variant="ghost" size="unstyled" onClick={() => void refresh()}>
+        <Button variant="plain" onClick={() => void refresh()}>
           Reintentar
         </Button>
       ) : (
@@ -100,12 +100,7 @@ export function CoupleGate({ children }: { children: React.ReactNode }) {
         {error ? (
           <>
             <p>{error}</p>
-            <Button
-              variant="ghost"
-              size="unstyled"
-              className="button"
-              onClick={() => void refresh()}
-            >
+            <Button variant="primary" onClick={() => void refresh()}>
               Reintentar
             </Button>
             <a href="/offline">Consultar recuerdos guardados</a>

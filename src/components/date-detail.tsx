@@ -48,10 +48,11 @@ export function DateDetailView({
       <main className="detail-page">
         <div className="detail-hero">
           <CachedImage
-            src={date.images[0]?.url || getCardBackground(date.id).replace(/\.png$/, '.webp')}
+            src={date.images[0]?.url || getCardBackground(date.id)}
             alt=""
             scope={scope}
             className="hero-background"
+            fallback={getCardBackground(date.id)}
           />
           <div className="hero-shade" />
           <span className="hero-number">
@@ -117,8 +118,7 @@ export function DateDetailView({
               <div className="photo-gallery">
                 {date.images.map((image, i) => (
                   <Button
-                    variant="ghost"
-                    size="unstyled"
+                    variant="plain"
                     key={image.id}
                     onClick={(e) => {
                       e.currentTarget.focus();
@@ -139,24 +139,12 @@ export function DateDetailView({
             </section>
           ) : null}
           {!readonly && date.completed ? (
-            <Button
-              variant="ghost"
-              size="unstyled"
-              className="text-button danger"
-              disabled={busy}
-              onClick={undo}
-            >
+            <Button variant="text" className="danger" disabled={busy} onClick={undo}>
               Marcar como pendiente
             </Button>
           ) : null}
           {!readonly && date.isCustom ? (
-            <Button
-              variant="ghost"
-              size="unstyled"
-              className="text-button danger"
-              disabled={busy}
-              onClick={remove}
-            >
+            <Button variant="text" className="danger" disabled={busy} onClick={remove}>
               Eliminar esta cita
             </Button>
           ) : null}

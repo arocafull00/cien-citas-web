@@ -57,9 +57,7 @@ export function PwaControls() {
     <aside className="pwa-controls">
       {update ? (
         <Button
-          variant="ghost"
-          size="unstyled"
-          className="text-button"
+          variant="text"
           onClick={() => {
             navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), {
               once: true,
@@ -72,9 +70,7 @@ export function PwaControls() {
       ) : null}
       {install ? (
         <Button
-          variant="ghost"
-          size="unstyled"
-          className="text-button"
+          variant="text"
           onClick={async () => {
             await install.prompt();
             await install.userChoice;
@@ -85,12 +81,7 @@ export function PwaControls() {
         </Button>
       ) : null}
       {ios ? (
-        <Button
-          variant="ghost"
-          size="unstyled"
-          className="text-button"
-          onClick={() => setHelp(!help)}
-        >
+        <Button variant="text" onClick={() => setHelp(!help)}>
           <Download size={15} /> Añadir a la pantalla de inicio
         </Button>
       ) : null}

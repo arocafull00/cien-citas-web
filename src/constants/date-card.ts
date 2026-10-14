@@ -3,11 +3,11 @@ import type { DateCategory } from '@/constants/dates';
 export const CARD_ASPECT = 1;
 
 export const CARD_BACKGROUNDS = [
-  '/images/cards/1.png',
-  '/images/cards/2.png',
-  '/images/cards/3.png',
-  '/images/cards/4.png',
-  '/images/cards/5.png',
+  '/images/cards/1.webp',
+  '/images/cards/2.webp',
+  '/images/cards/3.webp',
+  '/images/cards/4.webp',
+  '/images/cards/5.webp',
 ] as const;
 
 export type CategoryCardTheme = {

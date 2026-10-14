@@ -107,12 +107,7 @@ export function ProfileScreen() {
                 onChange={(e) => setName(e.target.value)}
               />
             </label>
-            <Button
-              variant="ghost"
-              size="unstyled"
-              className="button secondary"
-              disabled={busy || !online || !name.trim()}
-            >
+            <Button variant="outlined" disabled={busy || !online || !name.trim()}>
               {busy ? 'Guardando…' : 'Guardar nombre'}
             </Button>
           </form>

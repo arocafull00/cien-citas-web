@@ -143,7 +143,7 @@ export function DateForm({ id }: { id?: string }) {
               </label>
             </fieldset>
             <div className="form-submit">
-              <Button variant="ghost" size="unstyled" className="button" disabled={busy || !online}>
+              <Button variant="primary" disabled={busy || !online}>
                 {busy ? 'Guardando…' : id ? 'Guardar cambios' : 'Crear nuestra cita'}
               </Button>
             </div>
@@ -152,13 +152,7 @@ export function DateForm({ id }: { id?: string }) {
           <p>Cargando cita…</p>
         )}
         {date?.isCustomized && !date.isCustom ? (
-          <Button
-            variant="ghost"
-            size="unstyled"
-            className="text-button"
-            disabled={busy || !online}
-            onClick={() => setReset(true)}
-          >
+          <Button variant="text" disabled={busy || !online} onClick={() => setReset(true)}>
             Restaurar la idea original
           </Button>
         ) : null}

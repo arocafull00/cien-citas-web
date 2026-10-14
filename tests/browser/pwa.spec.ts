@@ -145,7 +145,8 @@ test('el listado conserva dos columnas y cabe en un móvil estrecho', async ({ p
   await page.evaluate(() => document.fonts.ready);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const columns = await page
-    .locator('.date-grid')
+    .locator('.virtual-date-row')
+    .first()
     .evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
   expect(columns).toBe(2);
   for (const card of await page.locator('.date-card').all())

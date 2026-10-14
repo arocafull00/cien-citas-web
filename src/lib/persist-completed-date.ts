@@ -1,5 +1,5 @@
 import { apiClient, isNetworkError } from '@/lib/api-client';
-import type { DateDetail } from '@/store/dates-store';
+import type { DateDetail } from '@/lib/types';
 
 export type CompletePatchPayload = {
   completed: true;

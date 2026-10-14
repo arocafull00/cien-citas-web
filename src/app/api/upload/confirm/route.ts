@@ -1,78 +1,51 @@
 export const runtime = 'nodejs';
+import { after } from 'next/server';
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { evaluateAfterPhotoAdded } from '@/lib/achievements/evaluate';
 import { db } from '@/db';
-import { coupleDates, customDateImages, customDates, dateImages } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { storageKey } from '@/lib/storage-key';
+import { customDateImages, dateImages } from '@/db/schema';
+import { handleApiError } from '@/lib/db-errors';
+import { findPhotoTarget, photoLimitResponse } from '@/lib/date-photos';
+import { MAX_PHOTOS_PER_DATE } from '@/lib/image-rules';
+import { deleteImages, keyFromUrl } from '@/lib/r2';
+import { readJsonObject } from '@/lib/request-body';
+import { generateThumbnail } from '@/lib/thumbnails';
 
 export async function POST(request: Request) {
   try {
     const { userId } = await requireAuth(request);
     const { coupleId } = await requireCouple(userId);
-
-    const { coupleDateId, customDateId, url } = (await request.json()) as {
-      coupleDateId?: string;
-      customDateId?: string;
-      url: string;
-    };
-
-    if (!url || (!coupleDateId && !customDateId)) {
+    const body = await readJsonObject(request);
+    const { url } = body;
+    if (typeof url !== 'string' || !url || (!body.coupleDateId && !body.customDateId)) {
       return Response.json(
         { error: 'Parámetros requeridos: url, coupleDateId o customDateId' },
         { status: 400 },
       );
     }
 
-    const key =
-      typeof url === 'string' && process.env.R2_PUBLIC_URL
-        ? storageKey(url, process.env.R2_PUBLIC_URL)
-        : null;
-    const expectedPrefix = customDateId
-      ? `${coupleId}/custom/${customDateId}/`
-      : `${coupleId}/catalog/${coupleDateId}/`;
-    if (!key?.startsWith(expectedPrefix))
-      return Response.json({ error: 'Imagen no válida para esta cita' }, { status: 403 });
-
-    if (customDateId) {
-      const cdRow = await db
-        .select()
-        .from(customDates)
-        .where(and(eq(customDates.id, customDateId), eq(customDates.coupleId, coupleId)))
-        .limit(1);
-
-      if (cdRow.length === 0) {
-        return Response.json({ error: 'Cita no encontrada o sin permisos' }, { status: 403 });
-      }
-
-      const [image] = await db.insert(customDateImages).values({ customDateId, url }).returning();
-
-      await evaluateAfterPhotoAdded(coupleId);
-
-      return Response.json({ imageId: image.id }, { status: 201 });
-    }
-
-    const cdRow = await db
-      .select()
-      .from(coupleDates)
-      .where(and(eq(coupleDates.id, coupleDateId!), eq(coupleDates.coupleId, coupleId)))
-      .limit(1);
-
-    if (cdRow.length === 0) {
+    const target = await findPhotoTarget(coupleId, body);
+    if (!target) {
       return Response.json({ error: 'Cita no encontrada o sin permisos' }, { status: 403 });
     }
+    const key = keyFromUrl(url);
+    if (!key?.startsWith(`${target.prefix}/`)) {
+      return Response.json({ error: 'Imagen no válida para esta cita' }, { status: 403 });
+    }
+    if (target.photos >= MAX_PHOTOS_PER_DATE) {
+      after(() => deleteImages([url]).catch((error) => console.error(error)));
+      return photoLimitResponse();
+    }
 
-    const [image] = await db
-      .insert(dateImages)
-      .values({ coupleDateId: coupleDateId!, url })
-      .returning();
+    const [image] =
+      target.kind === 'custom'
+        ? await db.insert(customDateImages).values({ customDateId: target.id, url }).returning()
+        : await db.insert(dateImages).values({ coupleDateId: target.id, url }).returning();
 
     await evaluateAfterPhotoAdded(coupleId);
-
+    after(() => generateThumbnail(key));
     return Response.json({ imageId: image.id }, { status: 201 });
-  } catch (e) {
-    if (e instanceof Response) return e;
-    console.error(e);
-    return Response.json({ error: 'Error interno' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error);
   }
 }

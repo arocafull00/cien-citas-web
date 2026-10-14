@@ -54,12 +54,7 @@ export function LoginScreen() {
         <div className="login-top">
           <span className="eyebrow">NUESTRA HISTORIA</span>
           {!last ? (
-            <Button
-              variant="ghost"
-              size="unstyled"
-              className="text-button"
-              onClick={() => setIndex(ONBOARDING_SLIDES.length - 1)}
-            >
+            <Button variant="text" onClick={() => setIndex(ONBOARDING_SLIDES.length - 1)}>
               Saltar
             </Button>
           ) : null}
@@ -72,7 +67,7 @@ export function LoginScreen() {
         {seen || slide.kind === 'partners' ? (
           <img
             className="login-hero"
-            src="/images/login-header.png"
+            src="/images/login-header.webp"
             alt="Recuerdos de nuestra historia"
           />
         ) : null}
@@ -132,8 +127,7 @@ export function LoginScreen() {
           <div className="dots" aria-label={`Pantalla ${index + 1} de ${ONBOARDING_SLIDES.length}`}>
             {ONBOARDING_SLIDES.map((_, i) => (
               <Button
-                variant="ghost"
-                size="unstyled"
+                variant="plain"
                 key={i}
                 aria-label={`Ir a pantalla ${i + 1}`}
                 aria-current={i === index ? 'step' : undefined}
@@ -149,9 +143,8 @@ export function LoginScreen() {
         ) : null}
         {last ? (
           <Button
-            variant="ghost"
-            size="unstyled"
-            className="button google-button"
+            variant="primary"
+            className="google-button"
             disabled={busy || !clerk.loaded}
             onClick={() => void signIn()}
           >
@@ -161,12 +154,7 @@ export function LoginScreen() {
             {busy ? 'Conectando…' : 'Continuar con Google'}
           </Button>
         ) : (
-          <Button
-            variant="ghost"
-            size="unstyled"
-            className="button"
-            onClick={() => setIndex((i) => i + 1)}
-          >
+          <Button variant="primary" onClick={() => setIndex((i) => i + 1)}>
             Continuar <ArrowRight size={18} />
           </Button>
         )}

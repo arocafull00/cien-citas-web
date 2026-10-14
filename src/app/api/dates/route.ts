@@ -27,11 +27,11 @@ export async function GET(request: Request) {
         .where(eq(coupleDates.coupleId, coupleId))
         .groupBy(coupleDates.id),
       db
-        .select({ dateId: coupleDates.dateId, url: dateImages.url })
+        .selectDistinctOn([coupleDates.dateId], { dateId: coupleDates.dateId, url: dateImages.url })
         .from(dateImages)
         .innerJoin(coupleDates, eq(dateImages.coupleDateId, coupleDates.id))
         .where(eq(coupleDates.coupleId, coupleId))
-        .orderBy(asc(dateImages.uploadedAt)),
+        .orderBy(coupleDates.dateId, asc(dateImages.uploadedAt)),
       db
         .select({ customDate: customDates, imageCount: count(customDateImages.id) })
         .from(customDates)
@@ -40,11 +40,14 @@ export async function GET(request: Request) {
         .groupBy(customDates.id)
         .orderBy(desc(customDates.createdAt)),
       db
-        .select({ customDateId: customDateImages.customDateId, url: customDateImages.url })
+        .selectDistinctOn([customDateImages.customDateId], {
+          customDateId: customDateImages.customDateId,
+          url: customDateImages.url,
+        })
         .from(customDateImages)
         .innerJoin(customDates, eq(customDateImages.customDateId, customDates.id))
         .where(eq(customDates.coupleId, coupleId))
-        .orderBy(asc(customDateImages.uploadedAt)),
+        .orderBy(customDateImages.customDateId, asc(customDateImages.uploadedAt)),
     ]);
 
     const coupleDateMap = new Map(

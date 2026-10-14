@@ -23,20 +23,10 @@ export function OnboardingScreen() {
           <>
             <h1>No pudimos abrir tu cuenta</h1>
             <p>{error}</p>
-            <Button
-              variant="ghost"
-              size="unstyled"
-              className="button"
-              onClick={() => void refresh()}
-            >
+            <Button variant="primary" onClick={() => void refresh()}>
               Reintentar
             </Button>
-            <Button
-              variant="ghost"
-              size="unstyled"
-              className="text-button"
-              onClick={() => void signOut()}
-            >
+            <Button variant="text" onClick={() => void signOut()}>
               Salir
             </Button>
           </>
@@ -93,12 +83,7 @@ function OnboardingFlow() {
     <main className="page onboarding-page">
       <div className="login-top">
         <span className="eyebrow">VUESTRO PRIMER PASO</span>
-        <Button
-          variant="ghost"
-          size="unstyled"
-          className="text-button"
-          onClick={() => void signOut()}
-        >
+        <Button variant="text" onClick={() => void signOut()}>
           Salir
         </Button>
       </div>
@@ -142,7 +127,7 @@ function OnboardingFlow() {
                 onChange={(e) => setName(e.target.value)}
               />
             </label>
-            <Button variant="ghost" size="unstyled" className="button" disabled={busy || !online}>
+            <Button variant="primary" disabled={busy || !online}>
               Continuar <ArrowRight size={18} />
             </Button>
           </form>
@@ -153,8 +138,7 @@ function OnboardingFlow() {
           <h1>Conecta con tu pareja</h1>
           <p className="intro">Un diario, dos protagonistas.</p>
           <Button
-            variant="ghost"
-            size="unstyled"
+            variant="plain"
             className="choice-card"
             disabled={busy || !online}
             onClick={() =>
@@ -170,12 +154,7 @@ function OnboardingFlow() {
             <span>Comparte vuestro código y empezad juntos.</span>
           </Button>
           <div className="ornament">♡</div>
-          <Button
-            variant="ghost"
-            size="unstyled"
-            className="choice-card"
-            onClick={() => setPhase('join')}
-          >
+          <Button variant="plain" className="choice-card" onClick={() => setPhase('join')}>
             <strong>Tengo un código</strong>
             <span>Únete a la historia que ya os espera.</span>
           </Button>
@@ -188,9 +167,7 @@ function OnboardingFlow() {
           <div className="invite-code">{code}</div>
           <div className="button-row">
             <Button
-              variant="ghost"
-              size="unstyled"
-              className="button secondary"
+              variant="outlined"
               onClick={() =>
                 void run(async () => {
                   await navigator.clipboard.writeText(code);
@@ -202,9 +179,7 @@ function OnboardingFlow() {
               Copiar
             </Button>
             <Button
-              variant="ghost"
-              size="unstyled"
-              className="button secondary"
+              variant="outlined"
               onClick={() =>
                 void run(async () => {
                   if (navigator.share)
@@ -224,12 +199,7 @@ function OnboardingFlow() {
             </Button>
           </div>
           <p className="waiting">Esperando a tu pareja…</p>
-          <Button
-            variant="ghost"
-            size="unstyled"
-            className="text-button"
-            onClick={() => setPhase('choice')}
-          >
+          <Button variant="text" onClick={() => setPhase('choice')}>
             Volver
           </Button>
         </>
@@ -263,21 +233,11 @@ function OnboardingFlow() {
                 onChange={(e) => setInvite(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
               />
             </label>
-            <Button
-              variant="ghost"
-              size="unstyled"
-              className="button"
-              disabled={busy || invite.length !== 6 || !online}
-            >
+            <Button variant="primary" disabled={busy || invite.length !== 6 || !online}>
               Unirme
             </Button>
           </form>
-          <Button
-            variant="ghost"
-            size="unstyled"
-            className="text-button"
-            onClick={() => setPhase('choice')}
-          >
+          <Button variant="text" onClick={() => setPhase('choice')}>
             Volver
           </Button>
         </>
@@ -292,12 +252,7 @@ function OnboardingFlow() {
             <Heart size={58} />
             <Heart size={58} />
           </div>
-          <Button
-            variant="ghost"
-            size="unstyled"
-            className="button"
-            onClick={() => router.replace('/dates')}
-          >
+          <Button variant="primary" onClick={() => router.replace('/dates')}>
             Empezar nuestra historia <ArrowRight size={18} />
           </Button>
         </>

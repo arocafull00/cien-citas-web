@@ -28,10 +28,8 @@ export const DateCard = memo(function DateCard({
   navigate?: DateNavigation;
 }) {
   const theme = CATEGORY_CARD_THEME[date.category];
-  const image =
-    date.completed && date.coverImageUrl
-      ? date.coverImageUrl
-      : getCardBackgroundForEntry(date.id, date.category, date.isCustom).replace(/\.png$/, '.webp');
+  const background = getCardBackgroundForEntry(date.id, date.category, date.isCustom);
+  const image = date.completed && date.coverImageUrl ? date.coverImageUrl : background;
   const href = readonly ? `/offline#${encodeURIComponent(`/date/${date.id}`)}` : `/date/${date.id}`;
   return (
     <a
@@ -53,6 +51,7 @@ export const DateCard = memo(function DateCard({
         className="card-background"
         loading="lazy"
         variant="thumbnail"
+        fallback={background}
       />
       <div className="card-overlay" />
       <div className="card-content">

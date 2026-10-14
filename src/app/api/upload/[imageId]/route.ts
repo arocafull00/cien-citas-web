@@ -2,7 +2,9 @@ export const runtime = 'nodejs';
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { db } from '@/db';
 import { coupleDates, customDateImages, customDates, dateImages } from '@/db/schema';
-import { deleteFromStorage } from '@/lib/r2-delete';
+import { handleApiError } from '@/lib/db-errors';
+import { isUuid } from '@/lib/date-id';
+import { deleteImagesLater } from '@/lib/r2';
 import { eq } from 'drizzle-orm';
 
 export async function DELETE(request: Request, context: { params: Promise<{ imageId: string }> }) {
@@ -10,6 +12,9 @@ export async function DELETE(request: Request, context: { params: Promise<{ imag
   try {
     const { userId } = await requireAuth(request);
     const { coupleId } = await requireCouple(userId);
+    if (!isUuid(imageId)) {
+      return Response.json({ error: 'Imagen no encontrada' }, { status: 404 });
+    }
 
     const catalogRows = await db
       .select({ image: dateImages, coupleDate: coupleDates })
@@ -23,8 +28,8 @@ export async function DELETE(request: Request, context: { params: Promise<{ imag
         return Response.json({ error: 'Sin permisos' }, { status: 403 });
       }
 
-      await deleteFromStorage(catalogRows[0].image.url);
       await db.delete(dateImages).where(eq(dateImages.id, imageId));
+      deleteImagesLater([catalogRows[0].image.url]);
       return Response.json({ success: true });
     }
 
@@ -43,13 +48,11 @@ export async function DELETE(request: Request, context: { params: Promise<{ imag
       return Response.json({ error: 'Sin permisos' }, { status: 403 });
     }
 
-    await deleteFromStorage(customRows[0].image.url);
     await db.delete(customDateImages).where(eq(customDateImages.id, imageId));
+    deleteImagesLater([customRows[0].image.url]);
 
     return Response.json({ success: true });
-  } catch (e) {
-    if (e instanceof Response) return e;
-    console.error(e);
-    return Response.json({ error: 'Error interno' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error);
   }
 }

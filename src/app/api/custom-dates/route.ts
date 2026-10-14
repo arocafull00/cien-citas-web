@@ -1,29 +1,38 @@
 export const runtime = 'nodejs';
 import { requireAuth, requireCouple } from '@/lib/auth-middleware';
 import { DATE_CATEGORIES, type DateCategory, type DateDifficulty } from '@/constants/dates';
+import { handleApiError } from '@/lib/db-errors';
+import { DIFFICULTIES, TEXT_LIMITS } from '@/lib/date-validation';
+import { readJsonObject } from '@/lib/request-body';
 import { db } from '@/db';
 import { customDates } from '@/db/schema';
-
-const DIFFICULTIES: DateDifficulty[] = ['fácil', 'medio', 'difícil'];
 
 export async function POST(request: Request) {
   try {
     const { userId } = await requireAuth(request);
     const { coupleId } = await requireCouple(userId);
 
-    const body = await request.json();
-    const { title, description, category, difficulty } = body as {
-      title?: string;
-      description?: string;
-      category?: string;
-      difficulty?: string;
-    };
+    const { title, description, category, difficulty } = await readJsonObject(request);
 
-    if (!title?.trim() || !description?.trim() || !category || !difficulty) {
+    if (
+      typeof title !== 'string' ||
+      typeof description !== 'string' ||
+      typeof category !== 'string' ||
+      typeof difficulty !== 'string' ||
+      !title.trim() ||
+      !description.trim()
+    ) {
       return Response.json(
         { error: 'Campos requeridos: title, description, category, difficulty' },
         { status: 400 },
       );
+    }
+
+    if (
+      title.trim().length > TEXT_LIMITS.title ||
+      description.trim().length > TEXT_LIMITS.description
+    ) {
+      return Response.json({ error: 'El texto es demasiado largo' }, { status: 400 });
     }
 
     if (!DATE_CATEGORIES.includes(category as DateCategory)) {
@@ -69,8 +78,6 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (e) {
-    if (e instanceof Response) return e;
-    console.error(e);
-    return Response.json({ error: 'Error interno' }, { status: 500 });
+    return handleApiError(e);
   }
 }

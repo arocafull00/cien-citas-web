@@ -222,8 +222,7 @@ export function CompleteDateForm({ id }: { id: string }) {
                         loading="lazy"
                       />
                       <Button
-                        variant="ghost"
-                        size="unstyled"
+                        variant="plain"
                         type="button"
                         aria-label="Eliminar foto"
                         onClick={() => setRemove(image.id)}
@@ -245,8 +244,7 @@ export function CompleteDateForm({ id }: { id: string }) {
                               : 'Nueva'}
                         </span>
                         <Button
-                          variant="ghost"
-                          size="unstyled"
+                          variant="plain"
                           type="button"
                           aria-label={`Quitar ${photo.file.name}`}
                           onClick={() =>
@@ -279,12 +277,7 @@ export function CompleteDateForm({ id }: { id: string }) {
                 </label>
               </fieldset>
               <div className="form-submit">
-                <Button
-                  variant="ghost"
-                  size="unstyled"
-                  className="button"
-                  disabled={busy || !online}
-                >
+                <Button variant="primary" disabled={busy || !online}>
                   {busy
                     ? 'Guardando vuestro recuerdo…'
                     : photos.some((p) => p.status === 'error')
@@ -294,13 +287,7 @@ export function CompleteDateForm({ id }: { id: string }) {
               </div>
             </form>
             {completionSaved && photos.some((p) => p.status === 'error') ? (
-              <Button
-                variant="ghost"
-                size="unstyled"
-                className="text-button"
-                disabled={busy || !online}
-                onClick={() => void save(true)}
-              >
+              <Button variant="text" disabled={busy || !online} onClick={() => void save(true)}>
                 Continuar con las fotos guardadas
               </Button>
             ) : null}

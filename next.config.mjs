@@ -8,11 +8,11 @@ const offlineAssets = [
   ...readdirSync('public/images/cards')
     .filter((name) => name.endsWith('.webp'))
     .map((name) => `images/cards/${name}`),
-  'fonts/Lora/static/Lora-Regular.ttf',
-  'fonts/Lora/static/Lora-Bold.ttf',
-  'fonts/Lora/static/Lora-Italic.ttf',
-  'fonts/SourceSans3-Regular.ttf',
-  'fonts/SourceSans3-SemiBold.ttf',
+  'fonts/Lora/static/Lora-Regular.woff2',
+  'fonts/Lora/static/Lora-Bold.woff2',
+  'fonts/Lora/static/Lora-Italic.woff2',
+  'fonts/SourceSans3-Regular.woff2',
+  'fonts/SourceSans3-SemiBold.woff2',
 ];
 const assetEntries = offlineAssets.map((path) => ({
   url: `/${path}`,

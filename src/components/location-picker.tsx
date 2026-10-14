@@ -108,8 +108,7 @@ export function LocationPicker({
           {places.map((place) => (
             <li key={place.id}>
               <Button
-                variant="ghost"
-                size="unstyled"
+                variant="plain"
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
@@ -128,8 +127,7 @@ export function LocationPicker({
         </ul>
       ) : null}
       <Button
-        variant="ghost"
-        size="unstyled"
+        variant="plain"
         type="button"
         className="text-button"
         disabled={disabled || locating}

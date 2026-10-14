@@ -46,7 +46,7 @@ export function PhotoViewer({
         <span>
           {active + 1} / {images.length}
         </span>
-        <Button variant="ghost" size="unstyled" aria-label="Cerrar visor" onClick={close}>
+        <Button variant="plain" aria-label="Cerrar visor" onClick={close}>
           <X />
         </Button>
       </div>
@@ -67,21 +67,11 @@ export function PhotoViewer({
       </div>
       {images.length > 1 ? (
         <div className="viewer-controls">
-          <Button
-            variant="ghost"
-            size="unstyled"
-            aria-label="Foto anterior"
-            onClick={() => move(-1)}
-          >
+          <Button variant="plain" aria-label="Foto anterior" onClick={() => move(-1)}>
             <ChevronLeft />
           </Button>
           <span>Desliza para ver más recuerdos</span>
-          <Button
-            variant="ghost"
-            size="unstyled"
-            aria-label="Foto siguiente"
-            onClick={() => move(1)}
-          >
+          <Button variant="plain" aria-label="Foto siguiente" onClick={() => move(1)}>
             <ChevronRight />
           </Button>
         </div>

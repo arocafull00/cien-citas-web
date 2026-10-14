@@ -14,73 +14,68 @@ import { normalizeCatalogOverride, resolveCatalogDate } from '@/lib/resolve-cata
 import { DATE_CATEGORIES, type DateCategory, type DateDifficulty } from '@/constants/dates';
 import { db } from '@/db';
 import { coupleDates, customDateImages, customDates, dateIdeas, dateImages } from '@/db/schema';
-import { deleteFromStorage } from '@/lib/r2-delete';
+import { handleApiError } from '@/lib/db-errors';
+import { DIFFICULTIES, parseDatePatch, type DatePatch } from '@/lib/date-validation';
+import { deleteImagesLater } from '@/lib/r2';
+import { readJsonObject } from '@/lib/request-body';
 import { eq, and, asc } from 'drizzle-orm';
 
-const DIFFICULTIES: DateDifficulty[] = ['fácil', 'medio', 'difícil'];
+type PatchBody = DatePatch;
 
-function deferNewCompletionSideEffects(params: {
-  coupleId: string;
-  partnerId: string | null;
-  userId: string;
-  dateTitle: string;
-  dateId: number;
-}) {
+function deferCompletionAchievements(coupleId: string) {
   after(async () => {
     try {
-      await evaluateAfterDateCompleted(params.coupleId);
+      await evaluateAfterDateCompleted(coupleId);
     } catch (error) {
       console.error('[achievements] completion evaluation failed', error);
     }
   });
 }
 
-type CustomizationBody = {
-  customTitle?: string | null;
-  customDescription?: string | null;
-  customCategory?: string | null;
-  customDifficulty?: string | null;
-};
+function validateCustomizationFields(body: PatchBody) {
+  const category = body.customCategory !== undefined ? body.customCategory : body.category;
+  const difficulty = body.customDifficulty !== undefined ? body.customDifficulty : body.difficulty;
+  const title = body.customTitle !== undefined ? body.customTitle : body.title;
+  const description =
+    body.customDescription !== undefined ? body.customDescription : body.description;
 
-type PatchBody = CustomizationBody & {
-  completed?: boolean;
-  completedAt?: string;
-  locationName?: string;
-  locationLat?: number;
-  locationLng?: number;
-  notes?: string;
-  title?: string;
-  description?: string;
-  category?: string;
-  difficulty?: string;
-};
-
-function validateCustomizationFields(body: CustomizationBody) {
-  if (body.customCategory != null && body.customCategory !== '') {
-    if (!DATE_CATEGORIES.includes(body.customCategory as DateCategory)) {
+  if (category != null && category !== '') {
+    if (!DATE_CATEGORIES.includes(category as DateCategory)) {
       return Response.json({ error: 'Categoría inválida' }, { status: 400 });
     }
   }
 
-  if (body.customDifficulty != null && body.customDifficulty !== '') {
-    if (!DIFFICULTIES.includes(body.customDifficulty as DateDifficulty)) {
+  if (difficulty != null && difficulty !== '') {
+    if (!DIFFICULTIES.includes(difficulty as DateDifficulty)) {
       return Response.json({ error: 'Dificultad inválida' }, { status: 400 });
     }
   }
 
-  if (body.customTitle != null && body.customTitle !== '' && !body.customTitle.trim()) {
+  if (title != null && title !== '' && !title.trim()) {
     return Response.json({ error: 'El título no puede estar vacío' }, { status: 400 });
   }
 
-  if (
-    body.customDescription != null &&
-    body.customDescription !== '' &&
-    !body.customDescription.trim()
-  ) {
+  if (description != null && description !== '' && !description.trim()) {
     return Response.json({ error: 'La descripción no puede estar vacía' }, { status: 400 });
   }
 
   return null;
+}
+
+function completionFields(body: PatchBody) {
+  const { completed, completedAt, locationName, locationLat, locationLng, notes } = body;
+  return {
+    ...(completed !== undefined && { completed }),
+    ...(completedAt !== undefined && { completedAt: completedAt ? new Date(completedAt) : null }),
+    ...(locationName !== undefined && { locationName }),
+    ...(locationLat !== undefined && {
+      locationLat: locationLat != null ? String(locationLat) : null,
+    }),
+    ...(locationLng !== undefined && {
+      locationLng: locationLng != null ? String(locationLng) : null,
+    }),
+    ...(notes !== undefined && { notes }),
+  };
 }
 
 function buildCatalogCustomization(body: PatchBody, idea: typeof dateIdeas.$inferSelect) {
@@ -220,19 +215,11 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
     return Response.json({ date });
   } catch (e) {
-    if (e instanceof Response) return e;
-    console.error(e);
-    return Response.json({ error: 'Error interno' }, { status: 500 });
+    return handleApiError(e);
   }
 }
 
-async function patchCatalogDate(
-  coupleId: string,
-  partnerId: string | null,
-  userId: string,
-  id: string,
-  body: PatchBody,
-) {
+async function patchCatalogDate(coupleId: string, id: string, body: PatchBody) {
   const dateId = parseCatalogDateId(id);
   if (dateId === null) {
     return Response.json({ error: 'Cita no encontrada' }, { status: 404 });
@@ -249,27 +236,24 @@ async function patchCatalogDate(
     return validationError;
   }
 
-  const { completed, completedAt, locationName, locationLat, locationLng, notes } = body;
   const customization = buildCatalogCustomization(body, idea);
   const now = new Date();
+  const findExisting = async () =>
+    (
+      await db
+        .select()
+        .from(coupleDates)
+        .where(and(eq(coupleDates.coupleId, coupleId), eq(coupleDates.dateId, dateId)))
+        .limit(1)
+    )[0];
 
-  const existing = await db
-    .select()
-    .from(coupleDates)
-    .where(and(eq(coupleDates.coupleId, coupleId), eq(coupleDates.dateId, dateId)))
-    .limit(1);
+  let existing = await findExisting();
+  let wasCompleted = existing?.completed ?? false;
+  let result: typeof coupleDates.$inferSelect | undefined;
 
-  const wasCompleted = existing[0]?.completed ?? false;
-  const isUncompleting = wasCompleted && completed === false;
-
-  if (isUncompleting && existing[0]) {
-    await clearCatalogDateCompletion(existing[0].id);
-  }
-
-  let result;
-
-  if (existing.length === 0) {
-    const [inserted] = await db
+  if (!existing) {
+    const { completed, completedAt, locationName, locationLat, locationLng, notes } = body;
+    [result] = await db
       .insert(coupleDates)
       .values({
         coupleId,
@@ -283,36 +267,29 @@ async function patchCatalogDate(
         ...customization,
         updatedAt: now,
       })
+      .onConflictDoNothing({ target: [coupleDates.coupleId, coupleDates.dateId] })
       .returning();
-    result = inserted;
-  } else {
-    const [updated] = await db
+    if (!result) {
+      existing = await findExisting();
+      wasCompleted = existing?.completed ?? false;
+    }
+  }
+
+  if (!result) {
+    if (!existing) throw new Error('couple_dates row missing after conflicting insert');
+    const isUncompleting = wasCompleted && body.completed === false;
+    if (isUncompleting) {
+      deleteImagesLater(await clearCatalogDateCompletion(existing.id));
+    }
+    [result] = await db
       .update(coupleDates)
-      .set(
-        isUncompleting
-          ? {
-              ...COMPLETION_RESET_FIELDS,
-              ...(Object.keys(customization).length > 0 && customization),
-              updatedAt: now,
-            }
-          : {
-              ...(completed !== undefined && { completed }),
-              ...(completedAt !== undefined && { completedAt: new Date(completedAt) }),
-              ...(locationName !== undefined && { locationName }),
-              ...(locationLat !== undefined && {
-                locationLat: locationLat != null ? String(locationLat) : null,
-              }),
-              ...(locationLng !== undefined && {
-                locationLng: locationLng != null ? String(locationLng) : null,
-              }),
-              ...(notes !== undefined && { notes }),
-              ...(Object.keys(customization).length > 0 && customization),
-              updatedAt: now,
-            },
-      )
-      .where(eq(coupleDates.id, existing[0].id))
+      .set({
+        ...(isUncompleting ? COMPLETION_RESET_FIELDS : completionFields(body)),
+        ...customization,
+        updatedAt: now,
+      })
+      .where(eq(coupleDates.id, existing.id))
       .returning();
-    result = updated;
   }
 
   const resolved = resolveCatalogDate(idea, result);
@@ -327,13 +304,7 @@ async function patchCatalogDate(
   }
 
   if (isNowCompleted && !wasCompleted) {
-    deferNewCompletionSideEffects({
-      coupleId,
-      partnerId,
-      userId,
-      dateTitle: resolved.title,
-      dateId,
-    });
+    deferCompletionAchievements(coupleId);
   }
 
   return Response.json({
@@ -353,13 +324,7 @@ async function patchCatalogDate(
   });
 }
 
-async function patchCustomDate(
-  coupleId: string,
-  partnerId: string | null,
-  userId: string,
-  id: string,
-  body: PatchBody,
-) {
+async function patchCustomDate(coupleId: string, id: string, body: PatchBody) {
   const existing = await db
     .select()
     .from(customDates)
@@ -371,18 +336,7 @@ async function patchCustomDate(
     return Response.json({ error: 'Cita no encontrada' }, { status: 404 });
   }
 
-  const {
-    completed,
-    completedAt,
-    locationName,
-    locationLat,
-    locationLng,
-    notes,
-    title,
-    description,
-    category,
-    difficulty,
-  } = body;
+  const { title, description, category, difficulty } = body;
 
   if (title !== undefined && !title?.trim()) {
     return Response.json({ error: 'El título no puede estar vacío' }, { status: 400 });
@@ -401,36 +355,24 @@ async function patchCustomDate(
   }
 
   const wasCompleted = custom.completed;
-  const isUncompleting = wasCompleted && completed === false;
+  const isUncompleting = wasCompleted && body.completed === false;
   const now = new Date();
 
   if (isUncompleting) {
-    await clearCustomDateCompletion(custom.id);
+    deleteImagesLater(await clearCustomDateCompletion(custom.id));
   }
 
   const [result] = await db
     .update(customDates)
     .set(
       isUncompleting
-        ? {
-            ...COMPLETION_RESET_FIELDS,
-            updatedAt: now,
-          }
+        ? { ...COMPLETION_RESET_FIELDS, updatedAt: now }
         : {
-            ...(completed !== undefined && { completed }),
-            ...(completedAt !== undefined && { completedAt: new Date(completedAt) }),
-            ...(locationName !== undefined && { locationName }),
-            ...(locationLat !== undefined && {
-              locationLat: locationLat != null ? String(locationLat) : null,
-            }),
-            ...(locationLng !== undefined && {
-              locationLng: locationLng != null ? String(locationLng) : null,
-            }),
-            ...(notes !== undefined && { notes }),
-            ...(title !== undefined && { title: title.trim() }),
-            ...(description !== undefined && { description: description.trim() }),
-            ...(category !== undefined && { category }),
-            ...(difficulty !== undefined && { difficulty }),
+            ...completionFields(body),
+            ...(title && { title: title.trim() }),
+            ...(description && { description: description.trim() }),
+            ...(category && { category }),
+            ...(difficulty && { difficulty }),
             updatedAt: now,
           },
     )
@@ -448,13 +390,7 @@ async function patchCustomDate(
   }
 
   if (isNowCompleted && !wasCompleted) {
-    deferNewCompletionSideEffects({
-      coupleId,
-      partnerId,
-      userId,
-      dateTitle: result.title,
-      dateId: 0,
-    });
+    deferCompletionAchievements(coupleId);
   }
 
   return Response.json({
@@ -470,19 +406,20 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const { id } = await context.params;
   try {
     const { userId } = await requireAuth(request);
-    const { coupleId, partnerId } = await requireCouple(userId);
+    const { coupleId } = await requireCouple(userId);
 
-    const body = await request.json();
-
-    if (isCustomDateId(id)) {
-      return patchCustomDate(coupleId, partnerId, userId, id, body);
+    const parsed = parseDatePatch(await readJsonObject(request));
+    if (parsed.error !== undefined) {
+      return Response.json({ error: parsed.error }, { status: 400 });
     }
 
-    return patchCatalogDate(coupleId, partnerId, userId, id, body);
+    if (isCustomDateId(id)) {
+      return await patchCustomDate(coupleId, id, parsed.value);
+    }
+
+    return await patchCatalogDate(coupleId, id, parsed.value);
   } catch (e) {
-    if (e instanceof Response) return e;
-    console.error(e);
-    return Response.json({ error: 'Error interno' }, { status: 500 });
+    return handleApiError(e);
   }
 }
 
@@ -497,7 +434,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     const { coupleId } = await requireCouple(userId);
 
     const existing = await db
-      .select()
+      .select({ id: customDates.id })
       .from(customDates)
       .where(and(eq(customDates.id, id), eq(customDates.coupleId, coupleId)))
       .limit(1);
@@ -506,24 +443,17 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
       return Response.json({ error: 'Cita no encontrada' }, { status: 404 });
     }
 
-    const imgRows = await db
-      .select({ url: customDateImages.url })
-      .from(customDateImages)
-      .where(eq(customDateImages.customDateId, id));
-
-    for (const img of imgRows) {
-      await deleteFromStorage(img.url);
-    }
-
-    await db.delete(customDateImages).where(eq(customDateImages.customDateId, id));
+    const images = await db
+      .delete(customDateImages)
+      .where(eq(customDateImages.customDateId, id))
+      .returning({ url: customDateImages.url });
     await db
       .delete(customDates)
       .where(and(eq(customDates.id, id), eq(customDates.coupleId, coupleId)));
+    deleteImagesLater(images.map((image) => image.url));
 
     return Response.json({ success: true });
   } catch (e) {
-    if (e instanceof Response) return e;
-    console.error(e);
-    return Response.json({ error: 'Error interno' }, { status: 500 });
+    return handleApiError(e);
   }
 }
