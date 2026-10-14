@@ -13,8 +13,8 @@ await sharp('public/images/icon.png')
   .png()
   .toFile('public/icons/apple-touch-icon.png');
 await sharp('public/images/icon.png')
-  .resize(360, 360)
-  .extend({ top: 76, bottom: 76, left: 76, right: 76, background: '#fcf9f4' })
+  .resize(450, 450)
+  .extend({ top: 31, bottom: 31, left: 31, right: 31, extendWith: 'copy' })
   .png()
   .toFile('public/icons/maskable-512.png');
 console.log('Iconos PWA generados desde el icono original.');
